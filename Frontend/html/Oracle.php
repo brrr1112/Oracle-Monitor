@@ -6,7 +6,7 @@
    
     if($conn)
     {
-        echo"connected";
+        
     }
     else
     {
