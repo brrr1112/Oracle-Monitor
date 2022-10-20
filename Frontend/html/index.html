@@ -10,45 +10,41 @@
         <div class="form">
         <img class="imagen" src="/img/logo.png">
         <!--<h2>Sign in </h2>-->
+            <form  action="loginChecker.php" method="POST" >
+                <div class="inputbox">
+                    <input type="text" required="required" name="user">
+                    <span>username</span>
+                    <i></i>
+                </div>
 
-        <div class="inputbox">
-            <input type="text" required="required">
-            <span>username</span>
-            <i></i>
-        </div>
+                <div class="inputbox">
+                    <input type="password" required="required" name="pass">
+                    <span>password</span>
+                    <i></i>
+                </div>
+                
+                <div class="inputbox">
+                    <input type="text" required="required" name="hostName">
+                    <span>host name</span>
+                    <i></i>
+                </div>
 
-        <div class="inputbox">
-            <input type="password" required="required">
-            <span>password</span>
-            <i></i>
-        </div>
-        
-        <div class="inputbox">
-            <input type="text" required="required">
-            <span>host name</span>
-            <i></i>
-        </div>
+                <div class="inputbox">
+                    <input type="text"  name="port">
+                    <span>port</span>
+                    <i></i>
+                </div>
 
-        <div class="inputbox">
-            <input type="text" required="required">
-            <span>port</span>
-            <i></i>
-        </div>
+                <div class="inputbox">
+                    <input type="text" required="required" name="db">
+                    <span>database name</span>
+                    <i></i>
+                </div>
 
-        <div class="inputbox">
-            <input type="text" required="required">
-            <span>database name</span>
-            <i></i>
-        </div>
-
-        <div class="boton">
-            <input type="submit" value:="Login"/>
-        </div>
-        
-        
-
-
-
+                <div class="boton">
+                    <input type="submit" value:="Login"/>
+                </div>
+            </form>
         </div>
     </div>
 </body>
