@@ -8,15 +8,15 @@ $e = oci_error();
 trigger_error(htmlentities($e['message'], ENT_QUOTES), E_USER_ERROR);
 }
 
-$query= oci_parse($conn,'select USED_MB,TIME from sys.job_SGA_Table');
+$query= oci_parse($conn,'select tablespace_name, sum(bytes) total from Dba_data_files Group by tablespace_name');
 oci_execute($query);
 
 $rows = array();
 $table = array();
 $table['cols'] = array(
 
-array('label' => 'TIME', 'type' => 'string'),
-array('label' => 'USED_MB', 'type' => 'number'),
+array('label' => 'tablespace_name', 'type' => 'string'),
+array('label' => 'USED_MB Total', 'type' => 'number'),
 );
 
     $rows = array();
@@ -24,9 +24,9 @@ array('label' => 'USED_MB', 'type' => 'number'),
     $temp = array();
     //The below col names have to be in upper caps.
     
-    $temp[] = array('v' => (string) $r["TIME"]);
+    $temp[] = array('v' => (string) $r["TABLESPACE_NAME"]);
     
-    $temp[] = array('v' => (int) $r["USED_MB"]);
+    $temp[] = array('v' => (int) $r["TOTAL"]);
     
     $rows[] = array('c' => $temp);
     }
@@ -55,7 +55,7 @@ $jsonTable = json_encode($table);
         var data = new google.visualization.DataTable(<?=$jsonTable?>);
 
         var options = {
-          title: 'SGA Performance',
+          title: 'Table space size',
           curveType: 'function',
           legend: { position: 'bottom' }
         };
@@ -70,6 +70,6 @@ $jsonTable = json_encode($table);
     <!–this is the div that will hold the pie chart–>
     <div id=”chart_div” ></div>
     <div id=”chart_div2″ ></div>
-    <div id="curve_chart" style="width: 80%; height: 500px"></div>
+    <div id="piechart" style="width: 900px; height: 500px;"></div>
 </body>
 </html>
