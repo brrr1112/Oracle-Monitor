@@ -4,7 +4,7 @@
     //$resultado = $conn->query($sql);
     $fm = 
 
-    $stid = oci_parse($conn,'select  Used_MB , FREE_MB, TOTAL_MB  from sys.view_table_user');
+    $stid = oci_parse($conn,'select  Used_MB , FREE_MB, TOTAL_MB, Time from sys.view_table_SGA');
     oci_execute($stid);
     $resultado = oci_execute($stid);
 ?>
@@ -41,6 +41,7 @@
                         <th>Used_MB</th>
                         <th>FREE_MB</th>
                         <th>TOTAL_MB</th>
+                        <th>TIME</th>
                     </thead> 
 
                     <tbody>
@@ -48,6 +49,7 @@
                             <td><?php echo $row['USED_MB']; ?></td>
                             <td><?php echo $row['FREE_MB']; ?></td>
                             <td><?php echo $row['TOTAL_MB']; ?></td>
+                            <td><?php echo $row['TIME']; ?></td>
                         <?php } ?>
                     </tbody>                  
                 </table>
