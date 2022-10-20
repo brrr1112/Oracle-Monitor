@@ -16,31 +16,11 @@
     if($conn)
     {
         echo"connected";
-        header("Location: hola.html");
+        header("Location: hola.php");
     }
     else
     {
         echo"Not connected";
     }
-
-
-
-    /*
-    $username="system";
-    $password="119988";
-    $connection_string="localhost/xe";
-    $conn=oci_connect($username,$password,$connection_string);
-   
-    if($conn)
-    {
-        echo"connected";
-    }
-    else
-    {
-        echo"Not connected";
-    }
-    */
-
-
     
 ?> 
