@@ -43,7 +43,8 @@ $jsonTable = json_encode($table);
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <title>Table Space</title>
+    <link rel="stylesheet" href="sga.css">
     
   
 <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
@@ -67,6 +68,19 @@ $jsonTable = json_encode($table);
     </script>
 </head>
 <body>
+        <div class="row">
+            <div class="header">
+                <div class="box1">
+                    <p class="titu">Table Space</p>
+                    <img class="logo" src="logo.png">
+                    <div class="button">
+                        <a href="menu.html">
+                            <button class="boton">Back to Menu</button>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
     <!–this is the div that will hold the pie chart–>
     <div id=”chart_div” ></div>
     <div id=”chart_div2″ ></div>

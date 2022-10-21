@@ -26,7 +26,7 @@ body
 
 }
 
-.box::before
+.box::before 
 {
     content: "";
     position: absolute;
@@ -36,10 +36,10 @@ body
     height: 590px;
     background: linear-gradient(0deg, transparent, #7289da, #7289da);
     transform-origin:  bottom right;
-    animation: animate 6s linear infinite
+    animation: animate 6s linear infinite;
 }
 
-.box::after
+.box::after 
 {
     content: "";
     position: absolute;
@@ -153,6 +153,8 @@ body
     justify-content:center;
     flex-direction: column;
 }
+
+
 input[type="submit"]
 {
     border: none;
@@ -164,6 +166,31 @@ input[type="submit"]
     border-radius: 4px;
     font-weight: 600;
     cursor: pointer;
+}
+
+.boton
+{
+    border: none;
+    outline: none;
+    background: #7289da;
+    padding: 11px 25px;
+    width: 100px;
+    margin-top: 20px;
+    border-radius: 4px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.button
+{
+    text-align: center;
+    display: flex;
+    justify-content: center
+}
+
+.boton:active
+{
+    opacity: 0.8;
 }
 
 input[type="submit"]:active

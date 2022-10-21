@@ -16,7 +16,7 @@
     if($conn)
     {
         echo"connected";
-        header("Location: hola.php");
+        header("Location: menu.html");
     }
     else
     {
