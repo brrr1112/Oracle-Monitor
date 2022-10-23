@@ -3,7 +3,7 @@
     //$sql = 'select distinct au.USERNAME parseuser, vs.sql_text, vs.executions, vs.users_opening, to_char(to_date(vs.first_load_time, 'YYYY-MM-DD/HH24:MI:SS'),'MM/DD HH24:MI:SS') first_load_time, rows_processed, a.name command_type from v$sqlarea vs , all_users au, audit_actions a where (au.user_id(+)=vs.parsing_user_id) and (executions >= 1) and vs.COMMAND_TYPE = a.ACTION order by USERNAME;';
     //$resultado = $conn->query($sql);
 
-    $stid = oci_parse($conn,'Select PARSEUSER,SQL_TEXT,EXECUTIONS,USERS_OPENING,FIRST_LOAD_TIME,ROWS_PROCESSED,COMMAND_TYPE from sys.view_table_user_SQL');
+    $stid = oci_parse($conn,'Select PARSEUSER,COMMAND_TYPE,FIRST_LOAD_TIME,SQL_TEXT from sys.view_table_user_SQL');
     oci_execute($stid);
     $resultado = oci_execute($stid);
 ?>
@@ -49,24 +49,21 @@
                 <table class="table">
                     <thead class="text-muted">
                         <th>User</th>
-                        <th>Sql_text</th>
-                        <th>Executions</th>
-                        <th>Users_opening</th>   
                         <th>first_load_time</th> 
-                        <th>rows processed</th>  
-                        <th>COMMAND_TYPE</th>  
+                        <th>COMMAND_TYPE</th> 
+                        <th>Sql_text</th>
+            
                     </thead> 
 
                     <tbody>
                         <?php while($row = oci_fetch_array($stid, OCI_ASSOC+OCI_RETURN_NULLS)){?>
                             <tr>
                             <td><?php echo $row['PARSEUSER']; ?></td>
-                            <td><?php echo $row['SQL_TEXT']; ?></td>
-                            <td><?php echo $row['EXECUTIONS']; ?></td>
-                            <td><?php echo $row['USERS_OPENING']; ?></td>
                             <td><?php echo $row['FIRST_LOAD_TIME']; ?></td>
-                            <td><?php echo $row['ROWS_PROCESSED']; ?></td>
                             <td><?php echo $row['COMMAND_TYPE']; ?></td>
+                            <td><?php echo $row['SQL_TEXT']; ?></td>
+                            
+                            
                             </tr>
                         <?php } ?>
                     </tbody>                  
