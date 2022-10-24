@@ -8,15 +8,15 @@ $e = oci_error();
 trigger_error(htmlentities($e['message'], ENT_QUOTES), E_USER_ERROR);
 }
 
-$query= oci_parse($conn,'select USED_MB,TIME from sys.job_SGA_Table');
+$query= oci_parse($conn,'select USED_MB,TOTAL_MB,TIME from sys.job_SGA_Table');
 oci_execute($query);
 
 $rows = array();
 $table = array();
 $table['cols'] = array(
-
 array('label' => 'TIME', 'type' => 'string'),
 array('label' => 'USED_MB', 'type' => 'number'),
+array('label' => 'TOTAL_MB', 'type' => 'number'),
 );
 
     $rows = array();
@@ -27,6 +27,8 @@ array('label' => 'USED_MB', 'type' => 'number'),
     $temp[] = array('v' => (string) $r["TIME"]);
     
     $temp[] = array('v' => (int) $r["USED_MB"]);
+
+    $temp[] = array('v' => (int) $r["TOTAL_MB"]);
     
     $rows[] = array('c' => $temp);
     }
@@ -62,6 +64,7 @@ $jsonTable = json_encode($table);
         };
 
         var chart = new google.visualization.LineChart(document.getElementById('curve_chart'));
+
 
         chart.draw(data, options);
       }
