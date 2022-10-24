@@ -53,7 +53,7 @@
                     <tbody>
                         <?php while($row = oci_fetch_array($stid, OCI_ASSOC+OCI_RETURN_NULLS)){?>
                             <tr>
-                            <td><?php $row['STATUS']; if($row['STATUS']=="INACTIVE"){?> <img src="zzzLog.png" alt="Trulli" width="100" height="100"> <?php } ?></td>
+                            <td><?php $row['STATUS']; if($row['STATUS']=="INACTIVE"){?> <img src="zzzLog.png" alt="Trulli" width="100" height="100"> <?php }else{?> <img src="currentLog.png" alt="Trulli" width="100" height="100"> <?php } ?></td>
                             </tr>
                         <?php } ?>
                     </tbody>                  
