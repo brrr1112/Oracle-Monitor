@@ -6,6 +6,16 @@
     //oci_execute($sto);
     oci_execute($stid);
     $resultado = oci_execute($stid);
+
+     $query= oci_parse($conn,'begin :result := switch_minutes_avg; end;');
+
+    oci_bind_by_name($query, ':result', $result, 40);
+
+    oci_execute($query);
+
+    oci_free_statement($query);
+
+    oci_close($conn);
 ?>
 
 
@@ -60,11 +70,28 @@
                             <td><?php $row['STATUS']; if($row['STATUS']=="INACTIVE"){?> <img src="zzzLog.png" alt="Trulli" width="100" height="100"> <?php }else{?> <img src="currentLog.png" alt="Trulli" width="100" height="100"> <?php } ?></td>
                             </tr>
                         <?php } ?>
-                    </tbody>                  
+                    </tbody>              
                 </table>
             </div>
         </div>
     
+        <div class="form-control">
+            <br><div class="table-responsive">
+                <table class="table">
+                    <thead class="text-muted">
+                        <th>Switch minutes </th>
+            
+                    </thead>    
+                    <tbody>
+                        
+                            <tr>
+                            <td><?php echo $result; ?></td>
+                            </tr>
+                        
+                    </tbody>                  
+                </table>
+            </div>
+        </div>
     </div>
 </body>
 

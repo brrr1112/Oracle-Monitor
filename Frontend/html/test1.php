@@ -1,16 +1,15 @@
 <?php
     include_once('Oracle.php');
-    $stid = oci_parse($conn,'execute sys.switch_minutes_avg');
-    //$sto = oci_parse($conn,'select sys.switch_minutes_avg from dual');
-    //oci_execute($sto);
-    oci_execute($stid);
-    $resultado = oci_execute($stid);
-    
-    /*$query= oci_parse($conn,'begin :result := sys.switch_minutes_avg; end;');
+
+    $query= oci_parse($conn,'begin :result := switch_minutes_avg; end;');
 
     oci_bind_by_name($query, ':result', $result, 40);
 
-    oci_execute($query);*/
+    oci_execute($query);
+
+    oci_free_statement($query);
+
+    oci_close($conn);
 ?>
 
 
@@ -60,11 +59,11 @@
                     </thead> 
 
                     <tbody>
-                        <?php while(oci_fetch($stid)){?>
+                        
                             <tr>
-                            <td><?php echo $resultado; ?></td>
+                            <td><?php echo $result; ?></td>
                             </tr>
-                        <?php } ?>
+                        
                     </tbody>                  
                 </table>
             </div>
