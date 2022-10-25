@@ -1,11 +1,16 @@
 <?php
     include_once('Oracle.php');
-
-    $stid = oci_parse($conn,'select STATUS from v$log');
+    $stid = oci_parse($conn,'execute sys.switch_minutes_avg');
     //$sto = oci_parse($conn,'select sys.switch_minutes_avg from dual');
     //oci_execute($sto);
     oci_execute($stid);
     $resultado = oci_execute($stid);
+    
+    /*$query= oci_parse($conn,'begin :result := sys.switch_minutes_avg; end;');
+
+    oci_bind_by_name($query, ':result', $result, 40);
+
+    oci_execute($query);*/
 ?>
 
 
@@ -45,28 +50,26 @@
         
             <h1>Logs</h1>
             <br>
-
+    
         <div class="form-control">
             <br><div class="table-responsive">
                 <table class="table">
                     <thead class="text-muted">
-                        <th>STATUS</th>
+                        <th>Tiempo Promedio de cambio de Logs</th>
             
                     </thead> 
 
                     <tbody>
-                        <?php while($row = oci_fetch_array($stid, OCI_ASSOC+OCI_RETURN_NULLS)){?>
+                        <?php while(oci_fetch($stid)){?>
                             <tr>
-                            <td><?php $row['STATUS']; if($row['STATUS']=="INACTIVE"){?> <img src="zzzLog.png" alt="Trulli" width="100" height="100"> <?php }else{?> <img src="currentLog.png" alt="Trulli" width="100" height="100"> <?php } ?></td>
+                            <td><?php echo $resultado; ?></td>
                             </tr>
                         <?php } ?>
                     </tbody>                  
                 </table>
             </div>
         </div>
-    
     </div>
 </body>
 
 </html>
-
