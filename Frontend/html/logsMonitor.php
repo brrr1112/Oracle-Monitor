@@ -1,13 +1,16 @@
 <?php
     include_once('Oracle.php');
 
+
     $stid = oci_parse($conn,'select STATUS from v$log');
-    //$sto = oci_parse($conn,'select sys.switch_minutes_avg from dual');
-    //oci_execute($sto);
+    $sto = oci_parse($conn,'select LOG_MODE from V$DATABASE');
+   
     oci_execute($stid);
     $resultado = oci_execute($stid);
+    oci_execute($sto);
+    $resultado = oci_execute($sto);
 
-     $query= oci_parse($conn,'begin :result := switch_minutes_avg; end;');
+    $query= oci_parse($conn,'begin :result := switch_minutes_avg; end;');
 
     oci_bind_by_name($query, ':result', $result, 40);
 
@@ -67,7 +70,7 @@
                     <tbody>
                         <?php while($row = oci_fetch_array($stid, OCI_ASSOC+OCI_RETURN_NULLS)){?>
                             <tr>
-                            <td><?php $row['STATUS']; if($row['STATUS']=="INACTIVE"){?> <img src="zzzLog.png" alt="Trulli" width="100" height="100"> <?php }else{?> <img src="currentLog.png" alt="Trulli" width="100" height="100"> <?php } ?></td>
+                            <td><?php $row['STATUS']; if($row['STATUS']=="CURRENT"){?> <img src="currentLog.png" alt="Trulli" width="100" height="100"> <?php }else{?> <img src="zzzLog.png" alt="Trulli" width="100" height="100"> <?php } ?></td>
                             </tr>
                         <?php } ?>
                     </tbody>              
@@ -83,17 +86,39 @@
             
                     </thead>    
                     <tbody>
-                        
+                            
                             <tr>
                             <td><?php echo $result; ?></td>
                             </tr>
-                        
+                           
                     </tbody>                  
                 </table>
             </div>
         </div>
+
+        <div class="form-control">
+            <br><div class="table-responsive">
+                <table class="table">
+                    <thead class="text-muted">
+                        <th>Log Mode</th>
+            
+                    </thead>    
+                    <tbody>
+                            
+                        <?php while($row = oci_fetch_array($sto, OCI_ASSOC+OCI_RETURN_NULLS)){?>
+                            <tr>
+                                <td><?php echo $row['LOG_MODE']; ?></td>
+                            </tr>
+                        <?php } ?>
+                           
+                    </tbody>                  
+                </table>
+            </div>
+        </div>
+
     </div>
 </body>
 
 </html>
+
 
