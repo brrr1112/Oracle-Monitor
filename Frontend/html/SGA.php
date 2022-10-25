@@ -45,7 +45,7 @@
         var options = {
           title: 'SGA Performance',
           vAxis: {
-            minValue: 0,
+            minValue: 1000,
             maxValue: SGAsize
           },
           curveType: 'function',
@@ -63,9 +63,10 @@
           }
         };
         
-
         var chart = new google.visualization.LineChart(document.getElementById('curve_chart'));
         chart.draw(data, options);
+
+        
       }
       setInterval(drawChart, 5000);
     </script>
@@ -90,5 +91,11 @@
       <div id=”chart_div2″ ></div>
       <div id="curve_chart" style="width: 100%; height: 700px"></div>
     </div>
+
+    <script>
+        function myfuntion(){
+            alert("Alto Consumo del SGA");
+        }
+    </script>
 </body>
 </html>
