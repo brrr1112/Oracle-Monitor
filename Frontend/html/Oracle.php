@@ -1,8 +1,8 @@
 <?php
-    $username="system";
-    $password="119988";
-    $connection_string="localhost/xe";
-    $conn=oci_connect($username,$password,$connection_string);
+$username="sys";
+$password="root";
+$connection_string="localhost/xe";
+$conn=oci_connect($username,$password,$connection_string, null, OCI_SYSDBA);
    
     if($conn)
     {

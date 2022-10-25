@@ -1,44 +1,3 @@
-<?php
-
-include_once('Oracle.php');
-
-
-if (!$conn) {
-$e = oci_error();
-trigger_error(htmlentities($e['message'], ENT_QUOTES), E_USER_ERROR);
-}
-
-$query= oci_parse($conn,'select USED_MB,TOTAL_MB,TIME from sys.job_SGA_Table');
-oci_execute($query);
-
-$rows = array();
-$table = array();
-$table['cols'] = array(
-array('label' => 'TIME', 'type' => 'string'),
-array('label' => 'USED_MB', 'type' => 'number'),
-array('label' => 'TOTAL_MB', 'type' => 'number'),
-);
-
-    $rows = array();
-    while($r = oci_fetch_array($query, OCI_ASSOC+OCI_RETURN_NULLS)) {
-    $temp = array();
-    //The below col names have to be in upper caps.
-    
-    $temp[] = array('v' => (string) $r["TIME"]);
-    
-    $temp[] = array('v' => (int) $r["USED_MB"]);
-
-    $temp[] = array('v' => (int) $r["TOTAL_MB"]);
-    
-    $rows[] = array('c' => $temp);
-    }
-    
-
-$table['rows'] = $rows;
-$jsonTable = json_encode($table);
-
-
-?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -47,43 +6,84 @@ $jsonTable = json_encode($table);
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SGA Size Monitor</title>
     <link rel="stylesheet" href="sga.css">
-    
-  
-<script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.1/jquery.min.js"></script>
+    <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
     <script type="text/javascript">
       google.charts.load('current', {'packages':['corechart']});
       google.charts.setOnLoadCallback(drawChart);
+      var SGAsize; 
+      var test;
+      $.ajax({
+          url: "http://localhost/Oracle_Monitor_SGA_TableSpce/results/oracle.php?q=sgasize",
+          dataType: 'json',
+          async: false,
+          success: function(response) {
+            console.log(response);
+             SGAsize= response;
+          } 
+        }).responsetext;
 
-      function drawChart() {
-        var data = new google.visualization.DataTable(<?=$jsonTable?>);
+      function drawChart(){
+        var rows;
 
+        $.ajax({
+          url: "http://localhost/Oracle_Monitor_SGA_TableSpce/results/oracle.php?q=sga",
+          dataType: 'json',
+          async: false,
+          success: function(response) {
+          // Do what ever with the response here
+            console.log(response);
+          // or save it for later. 
+            test = response;
+          } 
+        }).responsetext;
+        var data = new google.visualization.DataTable();
+        data.addColumn('string', 'Time');
+        data.addColumn('number','Used Mb');
+        data.addColumn('number', 'HWM');
+        data.addRows(test);
         var options = {
           title: 'SGA Performance',
+          vAxis: {
+            minValue: 0,
+            maxValue: SGAsize
+          },
           curveType: 'function',
-          legend: { position: 'bottom' }
+          legend: {
+            position: 'bottom' 
+          },
+          animation: {
+            duration:1000,
+            easing: 'out'
+          },
+          backgroundColor: '#ffffff',
+          colors: ['blue','gray'],
+            series: {
+              1: { lineDashStyle: [10, 2] }
+          }
         };
+        
 
         var chart = new google.visualization.LineChart(document.getElementById('curve_chart'));
-
-
         chart.draw(data, options);
       }
+      setInterval(drawChart, 5000);
     </script>
 </head>
 <body>
-<div class="row">
-            <div class="header">
-                <div class="box1">
-                    <p class="titu">SGA Size Monitor</p>
-                    <img class="logo" src="logo.png">
-                   <div class="button">
-                        <a href="menu.html">
-                            <button class="boton">Back to Menu</button>
-                        </a>
-                    </div>
-                </div>
-            </div>
+  <div class="row">
+    <div class="header">
+        <div class="box1">
+          <p class="titu">SGA Size Monitor</p>
+          <img class="logo" src="logo.png">
+          <div class="button">
+            <a href="menu.html">
+              <button class="boton">Back to Menu</button>
+            </a>
+          </div>
         </div>
+      </div>
+    </div>
     <!–this is the div that will hold the pie chart–>
     <div class="row">
       <div id=”chart_div” ></div>
