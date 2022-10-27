@@ -50,7 +50,7 @@ body
 {
     padding-top: 25px;
     padding-left: 25px;
-    color: #7289da;
+    color: #27a093;
     font-weight: 800;
     text-align: center;
     display: flex;
@@ -73,7 +73,7 @@ body
 {
     border: none;
     outline: none;
-    background: #7289da; 
+    background: #27a093; 
     width: 130px;
     height: 50px;
     border-radius: 4px;

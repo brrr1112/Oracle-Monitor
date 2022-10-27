@@ -5,7 +5,7 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SGA Size Monitor</title>
-    <link rel="stylesheet" href="sga.css">
+    <link rel="stylesheet" href="sgaStyle.css">
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.1/jquery.min.js"></script>
     <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
     <script type="text/javascript">
@@ -78,10 +78,12 @@
           <p class="titu">SGA Size Monitor</p>
           <img class="logo" src="logo.png">
           <div class="button">
+            <a href="SGA.php">
+              <button class="boton">Refresh</button>
+            </a>
             <a href="menu.html">
               <button class="boton">Back to Menu</button>
             </a>
-          </div>
         </div>
       </div>
     </div>

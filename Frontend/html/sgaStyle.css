@@ -50,7 +50,7 @@ body
 {
     padding-top: 25px;
     padding-left: 25px;
-    color: #7289da;
+    color: #27a093;
     font-weight: 800;
     text-align: center;
     display: flex;
@@ -62,7 +62,7 @@ body
 .logo
 {
     width: 300px;
-    margin: -82px 0px 0px 1475px;
+    margin: -85px 0px 0px 1475px;
     display:flex;
     justify-content: center;
     text-align: center;
@@ -73,7 +73,8 @@ body
 {
     border: none;
     outline: none;
-    background: #7289da; 
+    background: #27a093; 
+    margin-right: 20px;
     width: 130px;
     height: 50px;
     border-radius: 4px;
@@ -84,7 +85,7 @@ body
 
 .button
 {
-    margin: 800px 40px 0px 0px;
+    margin: 800px 40px 5px 5px;
     text-align: center;
     display: flex;
     justify-content:right;
