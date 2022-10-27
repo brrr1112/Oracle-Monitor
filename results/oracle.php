@@ -1,10 +1,10 @@
 <?php
 //header('Content-Type: application/json');
 $username="sys";
-$password="root";
+$password="system";
 $connection_string="localhost/xe";
 
-$conn=oci_connect($username,$password,$connection_string, null, OCI_SYSDBA);
+$conn=oci_connect($username,$password,$connection_string,'', OCI_SYSDBA);
 
 
 function getSGATable($conn){
