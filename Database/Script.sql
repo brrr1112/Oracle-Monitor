@@ -151,5 +151,31 @@ CREATE OR REPLACE FUNCTION switch_minutes_avg
   END;
 /
 
-
+--Prueba de la funcion
 select  switch_minutes_avg from dual;
+
+
+CREATE OR REPLACE VIEW rep_tsinfo AS
+SELECT
+      ts.tablespace_name    "NAME",
+      "SIZE(B)"/1024/1024                                  "TOTAL_SIZE",
+      fr."FREE(B)"/1024/1024                               "FREE_MB",
+      ("SIZE(B)" - "FREE(B)")/1024/1024                    "USED_MB"
+    FROM
+      (SELECT
+         tablespace_name,
+         SUM(bytes) "FREE(B)"
+       FROM dba_free_space
+       GROUP BY tablespace_name) fr,
+      (SELECT
+         tablespace_name,
+         SUM(bytes)    "SIZE(B)",
+         SUM(maxbytes) "MAX_EXT"
+       FROM dba_data_files
+       GROUP BY tablespace_name) df,
+      (SELECT tablespace_name
+       FROM dba_tablespaces) ts
+    WHERE fr.tablespace_name = df.tablespace_name
+          AND fr.tablespace_name = ts.tablespace_name;
+          
+SELECT * FROM rep_tsinfo;
