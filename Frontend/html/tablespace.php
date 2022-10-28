@@ -44,7 +44,7 @@ $jsonTable = json_encode($table);
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Table Space</title>
-    <link rel="stylesheet" href="tableuser.css">
+    <link rel="stylesheet" href="sgaStyle.css">
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.1/jquery.min.js"></script>  
     <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
     <script type="text/javascript">
@@ -79,10 +79,10 @@ $jsonTable = json_encode($table);
                 </div>
             </div>
     </div>
+
     <!–this is the div that will hold the pie chart–>
-    <div id=”chart_div” ></div>
-    <div id=”chart_div2″ ></div>
-    <div id="piechart" style="width: 700px; height: 500px;"></div>
+    <div id="piechart" style="width: 700px; height: 500px; display: flex; margin-left:90px;"></div>
+
 
     <script>
         var tsnames;
@@ -98,10 +98,14 @@ $jsonTable = json_encode($table);
             tsnames = response;
           } 
         }).responsetext;
-        
+
 
         google.charts.load("current", {packages:["corechart"]});
         google.charts.setOnLoadCallback(drawChart);
+    
+    
+      
+
 
         function drawChart() {
             var tsdata;
@@ -151,6 +155,7 @@ $jsonTable = json_encode($table);
         }
         */
     </script>
-    <div id="barchart_values" style="width: 900px; height: 300px;"></div>
+  
+    <div id="barchart_values" style="width: 400px; height: 300px;display: flex; margin:-430px 0px 0px 800px;"></div>
 </body>
 </html>
