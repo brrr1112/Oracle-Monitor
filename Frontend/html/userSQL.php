@@ -3,7 +3,16 @@
     //$sql = 'select distinct au.USERNAME parseuser, vs.sql_text, vs.executions, vs.users_opening, to_char(to_date(vs.first_load_time, 'YYYY-MM-DD/HH24:MI:SS'),'MM/DD HH24:MI:SS') first_load_time, rows_processed, a.name command_type from v$sqlarea vs , all_users au, audit_actions a where (au.user_id(+)=vs.parsing_user_id) and (executions >= 1) and vs.COMMAND_TYPE = a.ACTION order by USERNAME;';
     //$resultado = $conn->query($sql);
 
-    $stid = oci_parse($conn,'Select PARSEUSER,COMMAND_TYPE,FIRST_LOAD_TIME,SQL_TEXT from sys.view_table_user_SQL');
+    $where = "";
+    if(!empty($_POST)){
+        $valor = $_POST['user'];
+        if(!empty($valor)){
+            $where = "where PARSEUSER ='$valor'";
+        }
+    }
+
+
+    $stid = oci_parse($conn,"Select PARSEUSER,COMMAND_TYPE,FIRST_LOAD_TIME,SQL_TEXT from sys.view_table_user_SQL $where");
     oci_execute($stid);
     $resultado = oci_execute($stid);
 ?>
@@ -44,6 +53,17 @@
         
             <h1>Tabla Usuarios</h1>
             <br>
+
+            <form  action="<?php echo $_SERVER['PHP_SELF'] ?>" method="POST" >
+                <div class="inputbox">
+                     <span>Username</span>
+                    <input type="text" required="required" name="user">
+                    <i></i>
+                </div>
+
+                <button class="btn btn-primary" type="submit">Filtrar</button>
+
+            </form>
 
         <div class="form-control">
             <br><div class="table-responsive">
