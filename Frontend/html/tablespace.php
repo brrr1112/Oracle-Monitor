@@ -92,9 +92,7 @@ $jsonTable = json_encode($table);
           dataType: 'json',
           async: false,
           success: function(response) {
-          // Do what ever with the response here
             console.log(response);
-          // or save it for later. 
             tsnames = response;
           } 
         }).responsetext;
@@ -119,20 +117,26 @@ $jsonTable = json_encode($table);
                 }
             }).responsetext;
 
-            /*var data = google.visualization.DataTable();
-            data.addColumn('string', 'Used');
-            data.addColumn('string', 'Free_1');
-            data.addColumn('string', 'Free_2');
-            */
+            var data = new google.visualization.DataTable();
+            data.addColumn('string', 'name');
+            data.addColumn('number', 'Used');
+            data.addColumn('number', 'Free_1');
+            data.addColumn('number', 'Free_2');
+            for (let i = 0; i < tsbar.length; i++) {
+                console.log(tsbar[i]);
+                data.addRow(tsbar[i]);
+            }
+            //data.addRows(tsbar);
+            
 
             //valores de prueba
-
+/*
             var data = google.visualization.arrayToDataTable([
                 ['Used Mb', 'Free #1 Mb', 'Free #2 Mb',  { role: 'annotation' } ],
                 [tsnames[0], 10, 24, 20],
                 ['2020', 16, 22, 23],
                 ['2030', 28, 19, 29]
-            ]);
+            ]);*/
             var options = {
                 width: 400,
                 height: 400,
