@@ -48,6 +48,11 @@
                 <div class="box1">
                     <p class="titu">Logs Status Monitor</p>
                     <img class="logo" src="logo.png">
+                    <div class="button">
+                        <a href="menu.html">
+                            <button class="boton">Back to Menu</button>
+                        </a>
+                    </div>
                 </div>
             </div>
         </div>
@@ -112,11 +117,6 @@
             </div>
         </div>
 
-        <div class="button">
-            <a href="menu.html">
-                <button class="boton">Back to Menu</button>
-            </a>
-        </div>
     </div>
 </body>
 

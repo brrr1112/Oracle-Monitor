@@ -30,10 +30,6 @@
 </head>
 
 <body>
-
-
-
-
     <div class="container">
             <h1>Tabla Usuarios</h1>
             <br>

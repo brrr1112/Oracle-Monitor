@@ -42,7 +42,11 @@
                 <div class="box1">
                     <p class="titu">SGA Size Monitor</p>
                     <img class="logo" src="logo.png">
-                    
+                    <div class="button">
+                        <a href="menu.html">
+                            <button class="boton">Back to Menu</button>
+                        </a>
+                    </div>
                 </div>
             </div>
         </div>
@@ -71,7 +75,7 @@
                         <th>Sql_text</th>
             
                     </thead> 
-                    
+
                     <tbody>
                         <?php while($row = oci_fetch_array($stid, OCI_ASSOC+OCI_RETURN_NULLS)){?>
                             <tr>
@@ -86,11 +90,6 @@
                     </tbody>                  
                 </table>
             </div>
-            <div class="button">
-                    <a href="menu.html">
-                        <button class="boton">Back to Menu</button>
-                    </a>
-             </div>
         </div>
     </div>
 </body>

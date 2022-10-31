@@ -1,6 +1,5 @@
 <?php
 
-
     // extract all the form fields and store them in variables
     $dbuser=$_POST['user'];
     $dbpass=$_POST['pass'];

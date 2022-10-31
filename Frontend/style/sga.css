@@ -1,15 +1,13 @@
-*
-{
-    margin:0;
-    padding:0;
+* {
+    margin: 0;
+    padding: 0;
     box-sizing: border-box;
-    font-family:Verdana, Geneva, Tahoma, sans-serif
+    font-family: Verdana, Geneva, Tahoma, sans-serif
 }
 
-body
-{
+body {
     margin-top: 20px;
-    min-height: 100vh;
+    min-height: 100%;
     background: #23272a;
 }
 
@@ -28,9 +26,9 @@ body
 
 }
 
-.header{
+.header {
     display: flex;
-    font-size: 3em  ;
+    font-size: 3em;
     font-weight: bold;
     align-items: center;
     justify-content: center;
@@ -38,16 +36,14 @@ body
     margin-bottom: 40px;
 }
 
-.box1
-{ 
+.box1 {
     background: #2c2f33;
     border-radius: 10px;
     width: 1800px;
     height: 120px;
 }
 
-.box1 p
-{
+.box1 p {
     padding-top: 25px;
     padding-left: 25px;
     color: #27a093;
@@ -59,18 +55,19 @@ body
 
 
 
-.logo
-{
+.logo {
     width: 300px;
     margin: -85px 0px 0px 1475px;
-    display:flex;
+    display: flex;
     justify-content: center;
     text-align: center;
-   
+
 }
 
-.boton
-{
+.boton {
+    position: fixed;
+    bottom: 0;
+    right: 0;
     border: none;
     outline: none;
     background: #27a093; 
@@ -85,15 +82,12 @@ body
 
 .button
 {
-    margin: 800px 40px 5px 5px;
     text-align: center;
     display: flex;
     justify-content:right;
-    z-index: 10;
 }
 
-.boton:hover
-{
+.boton:hover {
     opacity: 0.8;
     background: white;
     transform: scale(1.1);
