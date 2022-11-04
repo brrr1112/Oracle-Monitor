@@ -97,6 +97,19 @@ body
     transform: scale(1.1);
 }
 
-td {
-    word-wrap: break-word
-  }
+.log {
+    max-width: 10%;
+    max-height: 10%;
+}
+.table {
+    color: white;
+    table-layout: auto;
+}
+.fila{
+ align-content: auto;
+ justify-content: center;
+}
+
+.title{
+    color: white;
+}
