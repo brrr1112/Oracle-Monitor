@@ -1,13 +1,6 @@
---Tabla de los usuarios
-CREATE or replace view view_table_user_SQL AS
-	select distinct au.USERNAME parseuser, vs.sql_text, vs.executions, vs.users_opening,
-	 to_char(to_date(vs.first_load_time, 'YYYY-MM-DD/HH24:MI:SS'),'MM/DD HH24:MI:SS') first_load_time, rows_processed, a.name command_type from v$sqlarea vs , 
-	all_users au, audit_actions a where (au.user_id(+)=vs.parsing_user_id) and (executions >= 1) and vs.COMMAND_TYPE = a.ACTION order by USERNAME;
-
-Select PARSEUSER,SQL_TEXT,EXECUTIONS,USERS_OPENING,FIRST_LOAD_TIME,ROWS_PROCESSED,COMMAND_TYPE from sys.view_table_user_SQL;
-
-
---                  SGA SECTION
+/*
+SGA SECTION
+*/
 
 --Crear la tabla para insertar los datos
 CREATE TABLE job_SGA_Table(USED_MB number,FREE_MB number,TOTAL_MB number,TIME date);
@@ -135,24 +128,9 @@ begin
 end;
 /
 
-CREATE OR REPLACE FUNCTION switch_minutes_avg
-  RETURN NUMBER IS
-  MM NUMBER;
-  BEGIN
-    WITH SWITCHMINUTES AS
-    (
-      select BASE.MINUTES, ROW_NUMBER() OVER (ORDER BY BASE.MINUTES DESC) AS ROWNUMBER
-      from (select TRUNC(date_to_unix_ts(first_time)/60,2) as MINUTES FROM v$log_history) BASE
-    )
-    SELECT TRUNC(AVG(AA.MINUTES-BB.MINUTES),2) AS AVG_SWITCH_MINUTES INTO MM
-    FROM SWITCHMINUTES AA, SWITCHMINUTES BB
-    WHERE AA.ROWNUMBER = BB.ROWNUMBER-1;
-    RETURN MM;
-  END;
-/
 
---Prueba de la funcion
-select  switch_minutes_avg from dual;
+
+
 
 
 CREATE OR REPLACE VIEW rep_tsinfo AS
@@ -179,3 +157,78 @@ SELECT
           AND fr.tablespace_name = ts.tablespace_name;
           
 SELECT * FROM rep_tsinfo;
+
+
+/*
+USERS SQL SECTION
+*/
+
+--Tabla de los usuarios
+CREATE OR REPLACE VIEW view_table_user_SQL AS
+    SELECT DISTINCT au.USERNAME parseuser, vs.sql_text, vs.executions, vs.users_opening,
+    to_char(to_date(vs.first_load_time, 'YYYY-MM-DD/HH24:MI:SS'),'MM/DD HH24:MI:SS') first_load_time, rows_processed, a.name command_type
+    FROM v$sqlarea vs , all_users au, audit_actions a 
+    where (au.user_id(+)=vs.parsing_user_id) and (executions >= 1) and vs.COMMAND_TYPE = a.ACTION
+    order by USERNAME, first_load_time;
+
+Select PARSEUSER,SQL_TEXT,EXECUTIONS,USERS_OPENING,FIRST_LOAD_TIME,ROWS_PROCESSED,COMMAND_TYPE from sys.view_table_user_SQL;
+
+CREATE OR REPLACE FUNCTION fun_get_usernames RETURN SYS_REFCURSOR IS
+    cr SYS_REFCURSOR;
+BEGIN
+    OPEN cr FOR
+    SELECT username FROM dba_users WHERE account_status = 'OPEN' order by 1;
+    RETURN cr;
+END;
+/*
+LOGS MONITOR
+*/
+
+/* consultas
+SELECT * FROM V$LOG;
+SELECT * FROM V$LOGFILE;
+SELECT * FROM V$LOG_HISTORY;
+*/
+
+/*
+ALTER DATABASE ADD LOGFILE MEMBER 'C:\APP\DAVID\PRODUCT\21C\ORADATA\XE\REDO04.LOG' TO GROUP 3;
+*/
+
+CREATE OR REPLACE FUNCTION fun_get_logsinfo RETURN SYS_REFCURSOR IS
+    cr SYS_REFCURSOR;
+BEGIN
+    OPEN cr FOR
+    SELECT GROUP#, MEMBERS, STATUS FROM V$LOG;
+    RETURN cr;
+END fun_get_logsinfo;
+/
+
+CREATE OR REPLACE FUNCTION fun_get_logMode RETURN VARCHAR2 IS
+  vmode  VARCHAR2(16);
+BEGIN
+  SELECT LOG_MODE INTO vmode FROM V$DATABASE;
+  RETURN vmode;
+END fun_get_logmode;
+/
+
+--Prueba de la funcion
+SELECT fun_get_logMode FROM DUAL;
+
+CREATE OR REPLACE FUNCTION fun_get_logSwitchMinutesAvg
+  RETURN NUMBER IS
+  MM NUMBER;
+  BEGIN
+    WITH SWITCHMINUTES AS
+    (
+      select BASE.MINUTES, ROW_NUMBER() OVER (ORDER BY BASE.MINUTES DESC) AS ROWNUMBER
+      from (select TRUNC(date_to_unix_ts(first_time)/60,2) as MINUTES FROM v$log_history) BASE
+    )
+    SELECT TRUNC(AVG(AA.MINUTES-BB.MINUTES),2) AS AVG_SWITCH_MINUTES INTO MM
+    FROM SWITCHMINUTES AA, SWITCHMINUTES BB
+    WHERE AA.ROWNUMBER = BB.ROWNUMBER-1;
+    RETURN MM;
+  END fun_get_logSwitchMinutesAvg;
+/
+
+--Prueba de la funcion
+select  switch_minutes_avg from dual;

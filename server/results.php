@@ -1,4 +1,7 @@
 <?php
+
+use LDAP\Result;
+
 header('Content-Type: application/json');
 $username = "sys";
 $password = "root";
@@ -13,13 +16,19 @@ $HWM = 0.95;
 */
 
 function getUsernames($conn){
-  $query = oci_parse($conn,'');
+  $query = oci_parse($conn,'begin :cursor := sys.fun_get_usernames; end;');
+  $p_cursor = oci_new_cursor($conn);
+  oci_bind_by_name($query, ':cursor', $p_cursor, -1, OCI_B_CURSOR);
+  
   oci_execute($query);
+  oci_execute($p_cursor, OCI_DEFAULT);
+
   $users = array();
 
-  while ($r = oci_fetch_array($query, OCI_ASSOC + OCI_RETURN_NULLS)) {
+  while ($r = oci_fetch_array($p_cursor, OCI_ASSOC + OCI_RETURN_NULLS)) {
     $users[] = (string) $r['USERNAME'];
-  } 
+
+  }
 
   oci_free_statement($query);
   oci_close($conn);
@@ -27,9 +36,37 @@ function getUsernames($conn){
   echo json_encode($users);
 }
 
+function getUsersSQL($conn){
+  //$query =  oci_parse($conn, 'begin :result := sys.fun_');
+  $where = "";
+  $username = null;
+  if(!empty($_GET['user'])){
+    $username = $_GET['user'];
+    $where = "where PARSEUSER ='$username'";
+  }
+
+  $query = oci_parse($conn,"Select PARSEUSER, COMMAND_TYPE, FIRST_LOAD_TIME, SQL_TEXT from sys.view_table_user_SQL $where");
+  oci_execute($query);
+  $rows = array();
+  while ($r = oci_fetch_array($query, OCI_ASSOC + OCI_RETURN_NULLS)){
+    $temp = array();
+    $temp[] = (string) $r['PARSEUSER'];
+    $temp[] = (string) $r['FIRST_LOAD_TIME'];
+    $temp[] = (string) $r['COMMAND_TYPE'];
+    $temp[] = (string) $r['SQL_TEXT'];
+    $rows[] = $temp;
+  }
+
+  echo json_encode($rows);
+  
+  oci_free_statement($query);
+  oci_close($conn);
+}
+
 /*
 SGA Section
 */
+
 function getSGATable($conn)
 {
   $query = oci_parse($conn, 'select USED_MB, TIME, TOTAL_MB from sys.job_SGA_Table');
@@ -90,7 +127,6 @@ function getTSPieInfo($conn)
   $rows = array();
   $table = array();
   $table['cols'] = array(
-
     array('label' => 'tablespace_name', 'type' => 'string'),
     array('label' => 'USED_MB Total', 'type' => 'number'),
   );
@@ -149,8 +185,29 @@ function getTSBarInfo($conn, $HWM)
 LOGS SECTION
 */
 
-function getSwitchMinutes($conn)
-{
+function getLogsInfo($conn){
+  $query = oci_parse($conn,'begin :cursor := sys.fun_get_logsinfo; end;');
+  $p_cursor = oci_new_cursor($conn);
+  oci_bind_by_name($query, ':cursor', $p_cursor, -1, OCI_B_CURSOR);
+  
+  oci_execute($query);
+  oci_execute($p_cursor, OCI_DEFAULT);
+
+  $info = array();
+
+  while ($r = oci_fetch_array($p_cursor, OCI_ASSOC + OCI_RETURN_NULLS)) {
+    $info[] = (string) $r['GROUP#'];
+    $info[] = (string) $r['MEMBERS'];
+    $info[] = (string) $r['STATUS'];
+  }
+
+  oci_free_statement($query);
+  oci_close($conn);
+  
+  echo json_encode($info);
+}
+
+function getSwitchMinutes($conn){
   $query = oci_parse($conn, 'begin :result := sys.switch_minutes_avg; end;');
   oci_bind_by_name($query, ':result', $result, 20);
   oci_execute($query);
@@ -159,7 +216,30 @@ function getSwitchMinutes($conn)
   echo json_encode($result);
 }
 
+function getLogMode($conn){
+  $query =  oci_parse($conn, 'begin :mode := sys.fun_get_logMode; end;');
+  oci_bind_by_name($query, ':mode', $result,16);
+  oci_execute($query);
+  oci_free_statement($query);
+  oci_close($conn);
+  echo json_encode($result);
+}
+
+//CONTROLLERR
 switch ($_GET['q']) {
+  /*
+  USER SQL
+  */
+  case 'usernames':
+    getUsernames($conn);
+    break;
+  
+  case 'usersql':
+    getUsersSQL($conn);
+    break;
+  /*
+  SGA
+  */
   case 'sga':
     getSGATable($conn);
     break;
@@ -167,10 +247,13 @@ switch ($_GET['q']) {
   case 'sgasize':
     getSGAMaxSize($conn);
     break;
-
+  /*
+  TABLESPACE
+  */
   case 'tspie':
     getTSPieInfo($conn);
     break;
+  
   case 'tsnames':
     getTablespaceNames($conn);
     break;
@@ -178,8 +261,18 @@ switch ($_GET['q']) {
   case 'tsbar':
     getTSBarInfo($conn, $HWM);
     break;
+  /*
+  LOGS
+  */
+  case 'logsinfo':
+    getLogsInfo($conn);
+    break;
 
-  case '1':
+  case 'logsswitch':
     getSwitchMinutes($conn);
+    break;
+  
+  case 'logmode':
+    getLogMode($conn);
     break;
 }
