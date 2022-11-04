@@ -194,17 +194,19 @@ function getLogsInfo($conn){
   oci_execute($p_cursor, OCI_DEFAULT);
 
   $info = array();
-
+  $rows = array();
   while ($r = oci_fetch_array($p_cursor, OCI_ASSOC + OCI_RETURN_NULLS)) {
+    $info = array();
     $info[] = (string) $r['GROUP#'];
     $info[] = (string) $r['MEMBERS'];
     $info[] = (string) $r['STATUS'];
+    $rows[] = $info;
   }
 
   oci_free_statement($query);
   oci_close($conn);
   
-  echo json_encode($info);
+  echo json_encode($rows);
 }
 
 function getSwitchMinutes($conn){
