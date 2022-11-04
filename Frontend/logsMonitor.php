@@ -51,11 +51,11 @@ $switchminutes = json_decode($jsonmin);
                             <div class="log">
                                 <?php foreach ($row as $data) { ?>
                                     <td><?php
-                                        if ($data == "INACTIVE") { ?>
-                                            <img class="log" src="img/zzzlog.png" title="Inactive log">
+                                        if ($data == "INACTIVE" || $data == "ACTIVE") { ?>
+                                            <img class="log" src="img/zzzlog.png" title="<?php echo $data." Log"?>">
                                         <?php
                                         } elseif ($data == "CURRENT") { ?>
-                                            <img class="log" src="img/currentLog.png" title="current log">
+                                            <img class="log" src="img/currentLog.png" title="<?php echo $data." Log"?>">
                                         <?php
                                         } else {
                                             echo $data;
