@@ -1,19 +1,3 @@
-<?php
-//include_once('Oracle.php');
-
-//$where = "";
-//if(!empty($_POST)){
-//    $valor = $_POST['user'];
-//    if(!empty($valor)){
-//        $where = "where PARSEUSER ='$valor'";
-//    }
-// }
-
-
-//$stid = oci_parse($conn,"Select PARSEUSER,COMMAND_TYPE,FIRST_LOAD_TIME,SQL_TEXT from sys.view_table_user_SQL $where");
-//oci_execute($stid);
-//$resultado = oci_execute($stid);
-?>
 <!DOCTYPE html>
 <html lang="en">
 
@@ -27,7 +11,7 @@
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.1/jquery.min.js"></script>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-Zenh87qX5JnK2Jl0vWa8Ck2rdkQ2Bzep5IDxbcnCeuOxjzrPF/et3URy9Bv1WTRi" crossorigin="anonymous">
     <link rel="stylesheet" href="style/users.css">
-    <script defer type="text/javascript" src="js/userSQL.js"></script>
+    <script defer type="text/javascript" src="js/users.js"></script>
 </head>
 
 <body>
@@ -59,22 +43,22 @@
             </div>
         </form>
 
-        <div id="alert"></div>
+        <div id="alerta" class="alerta">
+            <h2>No queries</h2>
+        </div>
 
-        <div class="form-control">
-            <br>
-            <div class="table-responsive">
-                <table id="table" class="table table-striped" style="table-layout: fixed">
-                    <thead class="text-muted">
-                        <th>User</th>
-                        <th>first_load_time</th>
-                        <th>COMMAND_TYPE</th>
-                        <th>Sql_text</th>
-                    </thead>
-                    <tbody id="tablebody">
-                    </tbody>
-                </table>
-            </div>
+        <br>
+        <div class="table-responsive">
+            <table id="table" class="table table-striped" style="table-layout: fixed">
+                <thead class="text-muted">
+                    <th>User</th>
+                    <th>first_load_time</th>
+                    <th>COMMAND_TYPE</th>
+                    <th>Sql_text</th>
+                </thead>
+                <tbody id="tablebody">
+                </tbody>
+            </table>
         </div>
     </div>
 </body>

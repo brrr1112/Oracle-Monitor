@@ -34,6 +34,7 @@ body
     font-weight: bold;
     align-items: center;
     justify-content: center;
+    width: 100%;
     margin-top: 20px;
     margin-bottom: 40px;
 }
@@ -112,4 +113,8 @@ body
 
 .title{
     color: white;
+}
+
+.alerta{
+    display: contents;
 }

@@ -37,14 +37,13 @@ function loadSQL(user){
         }
     }).responsetext;
 
-    if(result==null || result.length==0){
-        if (document.getElementById("alerttitle")!=null) {
-            document.getElementById("alerttitle").remove();
-        }
-        h2 = document.createElement("h2");
-        h2.id = "alerttitle";
-        h2.innerHTML = "No queries";
-        document.getElementById("alert").append(h2);
+
+    document.getElementById("alerta").style.display = 'none';
+    console.log('hidden');
+    if(result==null || result.length == 0){
+        console.log(result.length);
+        document.getElementById("alerta").style.display = 'contents';
+        console.log('visble');
     }
 
     document.getElementById("table").getElementsByTagName("tbody")[0].remove()
@@ -55,10 +54,6 @@ function loadSQL(user){
         for (const data of row) {
             var cell = r.insertCell(-1);
             cell.innerHTML = data;
-
-            // var td = document.createElement("td");
-            // td.innerHTML = data;
-            // selectuser.append(td);
         }
     }
 

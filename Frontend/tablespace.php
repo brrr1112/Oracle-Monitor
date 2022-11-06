@@ -17,7 +17,7 @@
         <div class="header">
             <div class="box1">
                 <p class="titu">Table Space</p>
-                <img class="logo" src="logo.png">
+                <img class="logo" src="img/logo.png">
             </div>
         </div>
     </div>
