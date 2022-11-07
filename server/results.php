@@ -1,13 +1,7 @@
 <?php
 
-use LDAP\Result;
-
 header('Content-Type: application/json');
-$username = "sys";
-$password = "root";
-$connection_string = "localhost/xe";
-
-$conn = oci_connect($username, $password, $connection_string, null, OCI_SYSDBA);
+include_once('oracle.php');
 
 $HWM = 0.95;
 
@@ -31,13 +25,10 @@ function getUsernames($conn){
   }
 
   oci_free_statement($query);
-  oci_close($conn);
-  
   echo json_encode($users);
 }
 
 function getUsersSQL($conn){
-  //$query =  oci_parse($conn, 'begin :result := sys.fun_');
   $where = "";
   $username = null;
   if(!empty($_GET['user'])){
@@ -58,9 +49,7 @@ function getUsersSQL($conn){
   }
 
   echo json_encode($rows);
-  
   oci_free_statement($query);
-  oci_close($conn);
 }
 
 /*
@@ -83,8 +72,6 @@ function getSGATable($conn)
   $var = json_encode($rows);
 
   oci_free_statement($query);
-  oci_close($conn);
-
   echo $var;
 }
 
@@ -94,7 +81,6 @@ function getSGAMaxSize($conn)
   oci_bind_by_name($query, ':result', $result, 20);
   oci_execute($query);
   oci_free_statement($query);
-  oci_close($conn);
   echo json_encode($result);
 }
 
@@ -114,7 +100,6 @@ function getTablespaceNames($conn)
   $var = json_encode($rows);
 
   oci_free_statement($query);
-  oci_close($conn);
 
   echo $var;
 }
@@ -176,8 +161,6 @@ function getTSBarInfo($conn, $HWM)
   $var = json_encode($rows);
 
   oci_free_statement($query);
-  oci_close($conn);
-
   echo $var;
 }
 
@@ -193,7 +176,6 @@ function getLogsInfo($conn){
   oci_execute($query);
   oci_execute($p_cursor, OCI_DEFAULT);
 
-  $info = array();
   $rows = array();
   while ($r = oci_fetch_array($p_cursor, OCI_ASSOC + OCI_RETURN_NULLS)) {
     $info = array();
@@ -204,8 +186,6 @@ function getLogsInfo($conn){
   }
 
   oci_free_statement($query);
-  oci_close($conn);
-  
   echo json_encode($rows);
 }
 
@@ -214,7 +194,6 @@ function getSwitchMinutes($conn){
   oci_bind_by_name($query, ':result', $result, 20);
   oci_execute($query);
   oci_free_statement($query);
-  oci_close($conn);
   echo json_encode($result);
 }
 
@@ -223,7 +202,6 @@ function getLogMode($conn){
   oci_bind_by_name($query, ':mode', $result,16);
   oci_execute($query);
   oci_free_statement($query);
-  oci_close($conn);
   echo json_encode($result);
 }
 
@@ -277,4 +255,6 @@ switch ($_GET['q']) {
   case 'logmode':
     getLogMode($conn);
     break;
+
+    oci_close($conn);
 }

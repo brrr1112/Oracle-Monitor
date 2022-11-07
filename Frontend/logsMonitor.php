@@ -1,8 +1,14 @@
 <?php
-$jsonlogs = file_get_contents("http://localhost/Oracle_Monitor_SGA_TableSpce/server/results.php?q=logsinfo");
-$jsonmode = file_get_contents("http://localhost/Oracle_Monitor_SGA_TableSpce/server/results.php?q=logmode");
-$jsonmin = file_get_contents("http://localhost/Oracle_Monitor_SGA_TableSpce/server/results.php?q=logsswitch");
+
+$opts =  array('http' => array('header'=> 'Cookie: ' . $_SERVER['HTTP_COOKIE']."\r\n"));
+
+$context = stream_context_create($opts);
+
+$jsonlogs = file_get_contents('http://localhost/Oracle_Monitor_SGA_TableSpce/server/results.php?q=logsinfo', false, $context);
+$jsonmode = file_get_contents("http://localhost/Oracle_Monitor_SGA_TableSpce/server/results.php?q=logmode", false, $context);
+$jsonmin = file_get_contents("http://localhost/Oracle_Monitor_SGA_TableSpce/server/results.php?q=logsswitch", false, $context);
 $logsinfo = json_decode($jsonlogs);
+//$logsinfo = null;
 $mode = json_decode($jsonmode);
 $switchminutes = json_decode($jsonmin);
 ?>
@@ -46,7 +52,8 @@ $switchminutes = json_decode($jsonmin);
                         <th>STATUS</th>
                     </thead>
                 <tbody>
-                    <?php foreach ($logsinfo as $row) { ?>
+                    <?php 
+                    if($logsinfo != null) {foreach ($logsinfo as $row) { ?>
                         <tr class="fila text-center">
                             <div class="log">
                                 <?php foreach ($row as $data) { ?>
@@ -64,7 +71,7 @@ $switchminutes = json_decode($jsonmin);
                                 <?php } ?>
                             </div>
                         <tr>
-                        <?php } ?>
+                        <?php } }?>
                 </tbody>
             </table>
         </div>

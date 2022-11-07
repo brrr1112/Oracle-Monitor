@@ -72,6 +72,10 @@ show error
 --Prueba de la funcion
 select fun_sga_maxsize TOTAL FROM dual;
 
+/*
+TABLESPACE SECTION
+*/
+
 --Nombres de los tablespace
 select tablespace_name from Dba_data_files;
 
@@ -111,15 +115,21 @@ SELECT
       TRUNC("SIZE(B)", 2)                                  "BYTES_SIZE",
       TRUNC(fr."FREE(B)", 2)                               "BYTES_FREE",
       TRUNC("SIZE(B)" - "FREE(B)", 2)                      "BYTES_USED"
-    FROM
+FROM
       (SELECT tablespace_name, SUM(bytes) "FREE(B)" FROM dba_free_space GROUP BY tablespace_name) fr,
       (SELECT tablespace_name, SUM(bytes) "SIZE(B)", SUM(maxbytes) "MAX_EXT" FROM dba_data_files GROUP BY tablespace_name) df,
       (SELECT tablespace_name FROM dba_tablespaces) ts
-    WHERE fr.tablespace_name = df.tablespace_name AND fr.tablespace_name = ts.tablespace_name;
+WHERE fr.tablespace_name = df.tablespace_name AND fr.tablespace_name = ts.tablespace_name;
 
+SELECT TRUNC (first_time) "Fecha", TO_CHAR (first_time, \'Dy\') "Dia", COUNT (1) "Total", ROUND (COUNT (1) / 24, 3)*10 "Promedio"
+FROM gv$log_history
+WHERE thread# = inst_id AND first_time > sysdate -7
+GROUP BY TRUNC (first_time), inst_id, TO_CHAR (first_time, \'Dy\')
+ORDER BY 1,2
 
---LOGFILE SECTION
-
+/*
+LOGFILE SECTION
+*/
 create or replace function date_to_unix_ts( PDate in date ) return number is
    l_unix_ts number;
 begin
@@ -127,11 +137,6 @@ begin
    return l_unix_ts;
 end;
 /
-
-
-
-
-
 
 CREATE OR REPLACE VIEW rep_tsinfo AS
 SELECT
