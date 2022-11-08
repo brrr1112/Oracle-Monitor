@@ -72,6 +72,17 @@ show error
 --Prueba de la funcion
 select fun_sga_maxsize TOTAL FROM dual;
 
+
+CREATE OR REPLACE FUNCTION fun_get_sgaAlerts RETURN SYS_REFCURSOR IS
+  cr SYS_REFCURSOR;
+BEGIN
+    OPEN cr FOR
+        
+END fun_get_sgaAlerts;
+/
+show error
+
+
 /*
 TABLESPACE SECTION
 */
@@ -79,8 +90,7 @@ TABLESPACE SECTION
 --Nombres de los tablespace
 select tablespace_name from Dba_data_files;
 
-CREATE OR REPLACE FUNCTION fun_get_tablespace_info(Ptsname IN VARCHAR2) RETURN SYS_REFCURSOR IS
-  cr SYS_REFCURSOR;
+CREATE OR REPLACE FUNCTION fun_get_tablespace_info(Ptsname IN VARCHAR2) 
   BEGIN
     OPEN cr FOR
     SELECT
@@ -127,9 +137,9 @@ WHERE thread# = inst_id AND first_time > sysdate -7
 GROUP BY TRUNC (first_time), inst_id, TO_CHAR (first_time, \'Dy\')
 ORDER BY 1,2
 
-/*
-LOGFILE SECTION
-*/
+                            /*
+                                LOGFILE SECTION
+                            */
 create or replace function date_to_unix_ts( PDate in date ) return number is
    l_unix_ts number;
 begin
@@ -164,9 +174,9 @@ SELECT
 SELECT * FROM rep_tsinfo;
 
 
-/*
-USERS SQL SECTION
-*/
+                        /*
+                        USERS SQL SECTION
+                        */
 
 --Tabla de los usuarios
 CREATE OR REPLACE VIEW view_table_user_SQL AS
@@ -185,9 +195,9 @@ BEGIN
     SELECT username FROM dba_users WHERE account_status = 'OPEN' order by 1;
     RETURN cr;
 END;
-/*
-LOGS MONITOR
-*/
+                                /*
+                                LOGS MONITOR
+                                */
 
 /* consultas
 SELECT * FROM V$LOG;

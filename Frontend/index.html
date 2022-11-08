@@ -4,9 +4,9 @@
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Administracion Bases de Datos</title>
-    <link rel="stylesheet" href="style/style.css">
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.1/jquery.min.js"></script> 
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.1/jquery.min.js"></script>
     <script defer type="text/javascript" src="js/login.js"></script>
+    <link rel="stylesheet" href="style/style.css">
 </head>
 
 <body>
@@ -29,14 +29,16 @@
                 </div>
 
                 <div class="inputbox">
-                    <label>Server:</label>
-                    <select id="servers" name="server">
-                        <option selected="selected" disabled>Choose a server</option>
-                    </select>
-                    <input type="hidden">
-                    <i></i>
+                    <div class="server-banner">
+                        <label>Server:</label>
+                        <select id="servers" name="server" class="dropdown-list">
+                            <option selected="selected" disabled>Choose a server</option>
+                        </select>
+                        <input type="hidden">
+                        <i></i>
+                    </div>
                 </div>
-                
+
                 <div class="inputbox">
                     <input type="text" name="port">
                     <span>Port</span>

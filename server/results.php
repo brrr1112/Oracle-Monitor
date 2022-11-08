@@ -84,6 +84,48 @@ function getSGAMaxSize($conn)
   echo json_encode($result);
 }
 
+function isSGAGreatherHWM($conn){
+  $query = oci_parse($conn, 'begin :result := sys.fun_sga_usedSize; end;');
+  oci_bind_by_name($query, ':result', $result, 20);
+  oci_execute($query);
+  oci_free_statement($query);
+  if ($result >= (getSGAMaxSize($conn)*$HWM)) {
+    return true;
+  }
+  return false;
+}
+
+function writeAlertCSV($alertArray){
+  $file = fopen($_SESSION['username'].'.csv', 'w');
+  foreach ($alertArray as $fields) {
+    fputcsv($file, $fields);
+  }
+  fclose($file);
+}
+
+function getSGAAlerts($conn){
+  $query = oci_parse($conn,'begin :cursor := sys.fun_get_sgaAlerts; end;');
+  $p_cursor = oci_new_cursor($conn);
+
+  oci_bind_by_name($query, ':cursor', $p_cursor, -1, OCI_B_CURSOR);
+  oci_execute($query);
+  oci_execute($p_cursor, OCI_DEFAULT);
+  
+  $alertArray = array();
+
+  while ($r = oci_fetch_array($p_cursor, OCI_ASSOC + OCI_RETURN_NULLS)) {
+    $temp = array();
+    $temp[] = (string) $r['USERNAME'];
+    $temp[] = (string) $r['LOAD_TIME'];
+    $temp[] = (string) $r['SQL'];
+    $alertArray[] = $temp;
+  }
+
+  writeAlertCSV($alertArray);
+
+  echo json_encode($alertArray);
+}
+
 /*
 Tablespace Section
 */

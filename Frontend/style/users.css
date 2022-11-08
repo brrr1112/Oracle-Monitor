@@ -118,3 +118,8 @@ body
 .alerta{
     display: contents;
 }
+
+.table {
+    color: white;
+    table-layout: auto;
+}

@@ -16,6 +16,7 @@ body {
     content: "";
     display: table;
     clear: both;
+    display: flex;
 }
 
 .column {
@@ -91,4 +92,28 @@ body {
     opacity: 0.8;
     background: white;
     transform: scale(1.1);
+}
+
+.curve_chart{
+    display: inline-flex;
+}
+
+.alert-banner{
+    height: 10%;
+    width: 100%;
+    display: inline-flex;
+    color: white;
+    justify-content: center;
+    gap: 3%;
+}
+.alert-icon{
+    max-width: 5%;
+}
+
+.row-content{
+    display: flex;
+}
+
+.alert-div{
+    width: 100%;
 }

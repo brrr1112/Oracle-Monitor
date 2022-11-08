@@ -137,7 +137,6 @@ body
     transition: 0.5s;
     pointer-events: none;
     z-index: 9;
-
 }
 
 .inputbox input:valid ~ i,
@@ -214,3 +213,15 @@ input[type="submit"]:active
     margin-bottom: -30px;
     text-align: center;
 }
+
+.dropdown-list{
+    border-color: #27a093;
+    border-radius: 7.5px;
+    border-width: medium;
+}
+
+.server-banner{
+    padding: 20px 20px 10px;
+    color: white;
+}
+
