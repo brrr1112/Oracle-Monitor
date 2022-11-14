@@ -115,7 +115,7 @@ function isSGAGreatherHWM($conn, $HWM)
 
 function writeAlertCSV($alertArray)
 {
-  $file = fopen($_SESSION['username'] . '.csv', 'w');
+  $file = fopen($_SESSION['username'] . '.csv', 'a+');
   foreach ($alertArray as $fields) {
     fputcsv($file, $fields);
   }
