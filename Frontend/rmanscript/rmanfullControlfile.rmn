@@ -1,0 +1,6 @@
+connect target /
+connect catalog RMANU/rmanu
+run{
+allocate channel CH1 device type DISK format 'C:\app\BACKUPS/%U_backups_.bak';
+backup database include current controlfile;
+}
