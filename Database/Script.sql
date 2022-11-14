@@ -1,43 +1,44 @@
-/*
-SGA SECTION
-*/
+                    /*
+                    SGA SECTION
+                    */
 
 --Crear la tabla para insertar los datos
 CREATE TABLE job_SGA_Table(USED_MB number,FREE_MB number,TOTAL_MB number,TIME date);
 
-/*Vaciar la tabla
-TRUNCATE TABLE job_SGA_Table;
-*/
-
 /*
+Vaciar la tabla
+TRUNCATE TABLE job_SGA_Table;
+
 DROP TABLE job_SGA_Table;
 */
 
+--CReacion de la tabla que contiene los valores para graficar
 select  USED_MB,TIME, TOTAL_MB from job_SGA_Table;
 
 --Procedimiento SGA
-Create or replace procedure prc_ins_job_SGA AS
-  Begin
-	Insert into job_SGA_Table(USED_MB,FREE_MB,TOTAL_MB,TIME)
-	select round(used.bytes /1024/1024 ,2) used_mb
-	, round(free.bytes /1024/1024 ,2) free_mb
-	, (round(tot.bytes /1024/1024 ,2)) TOTAL_mb
-	,current_date  Time
+CREATE OR REPLACE PROCEDURE prc_ins_job_SGA AS
+  BEGIN
+	INSERT INTO job_SGA_Table(USED_MB,FREE_MB,TOTAL_MB,TIME)
+	select round(used.bytes /1024/1024 ,2) used_mb, round(free.bytes /1024/1024 ,2) free_mb,
+  (round(tot.bytes /1024/1024 ,2)) TOTAL_mb, current_date Time
 	from (select sum(bytes) bytes
 	from v$sgastat
-	where name != 'free memory') used
-	, (select sum(bytes) bytes
-	from v$sgastat
-	where name = 'free memory') free
-	, (select sum(bytes) bytes
-	from v$sgastat)  tot ;
-	commit;
-end prc_ins_job_SGA;
-  
---CREATE OR REPLACE FUNCTION fun_sga_maxsize
+	where name != 'free memory') used,
+  (select sum(bytes) bytes from v$sgastat where name = 'free memory') free,
+  (select sum(bytes) bytes FROM v$sgastat)  tot ;
+	COMMIT;
+END prc_ins_job_SGA;
+/
+
+
+--cantidad de registros en la TABLESPACE
+--se usara posteriormete para limitar la cantidad de valores en la tabla
+ SELECT count(*)
+  FROM job_SGA_Table;
+
+
   
 --Automatizar el procedimiento
-
 BEGIN
  DBMS_SCHEDULER.CREATE_JOB (
    job_name        => 'Insert_data_SGA',
@@ -58,34 +59,80 @@ END;
 
 SELECT TOTAL_MB FROM job_SGA_Table FETCH FIRST 1 ROWS ONLY;
 
-CREATE OR REPLACE FUNCTION fun_sga_maxsize RETURN NUMBER IS
+
+CREATE OR REPLACE FUNCTION fun_get_sga_maxsize RETURN NUMBER IS
 tot number;
 BEGIN
     SELECT TOTAL_MB INTO tot from job_SGA_Table FETCH FIRST 1 ROWS ONLY;
     RETURN tot;
     EXCEPTION 
         WHEN no_data_found THEN RETURN (0);
-END fun_sga_maxsize;
+END fun_get_sga_maxsize;
 /
 show error
 
 --Prueba de la funcion
-select fun_sga_maxsize TOTAL FROM dual;
+select fun_get_sga_maxsize TOTAL FROM dual;
 
+CREATE OR REPLACE FUNCTION fun_get_sga_usedsize RETURN NUMBER IS
+val number;
+BEGIN
+	select round(used.bytes /1024/1024 ,2) used_mb
+    into val
+	from (select sum(bytes) bytes
+	from v$sgastat
+	where name != 'free memory') used;
+    return val;
+END fun_get_sga_usedsize;
+/
+SHOW ERROR
+
+--prueba de la funcion
+SELECT fun_get_sga_usedsize FROM dual;
+
+
+alter SESSION set NLS_TIMESTAMP_FORMAT = 'yyyy-mm-dd/hh24:mi:ss';
+alter SESSION set NLS_DATE_FORMAT = 'yyyy-mm-dd/hh24:mi:ss';
+select * from nls_database_parameters;
+
+CREATE OR REPLACE FUNCTION fun_get_isDiffLess5s(Ptime IN TIMESTAMP) RETURN INT IS
+BEGIN
+    IF(Ptime=null) THEN
+        RETURN -1;
+    ELSIF (Ptime >= (systimestamp  - interval '5' minute)) THEN
+        RETURN 1;
+    ELSE
+        RETURN 0;
+    END IF;
+END fun_get_isDiffLess5s;
+/
+SHOW ERROR
+
+--prueba de la funcion
+SELECT fun_get_isDiffLess5s('2022-11-10/15:44:23') as VAL from dual;
 
 CREATE OR REPLACE FUNCTION fun_get_sgaAlerts RETURN SYS_REFCURSOR IS
   cr SYS_REFCURSOR;
 BEGIN
     OPEN cr FOR
-        
+        SELECT au.USERNAME username,
+            to_timestamp(vs.first_load_time,'yyyy-mm-dd/hh24:mi:ss') load_time,
+            vs.sql_text SQL,
+            vs.OBJECT_STATUS status
+        FROM v$sqlarea vs , all_users au
+        where (au.user_id(+)=vs.parsing_user_id) and (executions >= 1) 
+            AND fun_get_isDiffLess5s(first_load_time)=1 order by first_load_time asc;
+    RETURN cr;
+    EXCEPTION 
+        WHEN no_data_found THEN RETURN NULL;
 END fun_get_sgaAlerts;
 /
 show error
 
 
-/*
-TABLESPACE SECTION
-*/
+                    /*
+                    TABLESPACE SECTION
+                    */
 
 --Nombres de los tablespace
 select tablespace_name from Dba_data_files;

@@ -7,7 +7,6 @@ $.ajax({
     dataType: 'json',
     async: false,
     success: function (response) {
-        console.log(response);
         SGAsize = response;
     }
 }).responsetext;
@@ -18,7 +17,6 @@ function drawChart() {
         dataType: 'json',
         async: false,
         success: function (response) {
-            console.log(response);
             test = response;
         }
     }).responsetext;
@@ -54,4 +52,38 @@ function drawChart() {
 
 }
 
+function getAlerts(){
+    let alerts;
+    console.log("FUNCTION");
+    $.ajax({
+        url: "http://localhost/Oracle_Monitor_SGA_TableSpce/server/results.php?q=sgaalerts",
+        dataType: 'json',
+        async: false,
+        success: function (response) {
+            console.log("BEFORE");
+            console.log(response);
+            console.log("After");
+            alerts = response;
+        }
+    }).responsetext;
+}
+
+function alerts() {
+    var value;
+    $.ajax({
+        url: "http://localhost/Oracle_Monitor_SGA_TableSpce/server/results.php?q=sgastatus",
+        dataType: 'json',
+        async: false,
+        success: function (response) {
+            console.log(response);
+            value = response;
+        }
+    }).responsetext;
+
+    if (value = 1){
+        getAlerts();
+    }
+}
+
 setInterval(drawChart, 5000);
+setInterval(alerts, 5000);
