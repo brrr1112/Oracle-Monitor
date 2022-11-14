@@ -96,3 +96,9 @@ body
     background: white;
     transform: scale(1.1);
 }
+
+.piechart{
+    display: flex;
+    align-items: center; 
+    justify-content: center;
+}

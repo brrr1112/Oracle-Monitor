@@ -23,9 +23,9 @@
     </div>
 
     <!–this is the div that will hold the pie chart–>
-    <div id="piechart" style="width: 700px; height: 500px;"></div>
+    <div class="piechart" id="piechart" style="width: 700px; height: 500px; display: inline-block; margin-left:100px; float:none;"></div>
 
-    <div id="barchart_values" style="width: 900px; height: 40%;"></div>
+    <div id="barchart_values" style="width: 900px; height: 40%; display: inline-block; margin-left:100px; float:none;"></div>
     <div class="button">
         <a href="menu.html">
             <button class="boton">Back to Menu</button>
