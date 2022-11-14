@@ -117,3 +117,8 @@ body {
 .alert-div{
     width: 100%;
 }
+
+.table {
+    color: white;
+    table-layout: auto;
+}

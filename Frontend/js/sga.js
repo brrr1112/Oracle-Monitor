@@ -60,12 +60,23 @@ function getAlerts(){
         dataType: 'json',
         async: false,
         success: function (response) {
-            console.log("BEFORE");
+            //console.log("BEFORE");
             console.log(response);
-            console.log("After");
+            //console.log("After");
             alerts = response;
         }
     }).responsetext;
+
+    document.getElementById("table").getElementsByTagName("tbody")[0].remove()
+    document.getElementById("table").append(document.createElement("tbody", { id: "tablebody" }));
+    
+    for (const row of alerts) {
+        var r = document.getElementById("table").getElementsByTagName("tbody")[0].insertRow(-1);
+        for (const data of row) {
+            var cell = r.insertCell(-1);
+            cell.innerHTML = data;
+        }
+    }
 }
 
 function alerts() {
