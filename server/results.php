@@ -3,17 +3,28 @@
 header('Content-Type: application/json');
 include_once('oracle.php');
 
-$HWM = 0.95;
+$HWM = 0.50;
+
+function setTimeFormat($conn)
+{
+  $query1 = oci_parse($conn, 'alter SESSION set NLS_TIMESTAMP_FORMAT = "yyyy-mm-dd/hh24:mi:ss"');
+  $query2 = oci_parse($conn, 'alter SESSION set NLS_DATE_FORMAT = "yyyy-mm-dd/hh24:mi:ss"');
+  oci_execute($query1);
+  oci_execute($query2);
+  oci_free_statement($query1);
+  oci_free_statement($query2);
+}
 
 /*
  Users section
 */
 
-function getUsernames($conn){
-  $query = oci_parse($conn,'begin :cursor := sys.fun_get_usernames; end;');
+function getUsernames($conn)
+{
+  $query = oci_parse($conn, 'begin :cursor := sys.fun_get_usernames; end;');
   $p_cursor = oci_new_cursor($conn);
   oci_bind_by_name($query, ':cursor', $p_cursor, -1, OCI_B_CURSOR);
-  
+
   oci_execute($query);
   oci_execute($p_cursor, OCI_DEFAULT);
 
@@ -21,25 +32,25 @@ function getUsernames($conn){
 
   while ($r = oci_fetch_array($p_cursor, OCI_ASSOC + OCI_RETURN_NULLS)) {
     $users[] = (string) $r['USERNAME'];
-
   }
 
   oci_free_statement($query);
   echo json_encode($users);
 }
 
-function getUsersSQL($conn){
+function getUsersSQL($conn)
+{
   $where = "";
   $username = null;
-  if(!empty($_GET['user'])){
+  if (!empty($_GET['user'])) {
     $username = $_GET['user'];
     $where = "where PARSEUSER ='$username'";
   }
 
-  $query = oci_parse($conn,"Select PARSEUSER, COMMAND_TYPE, FIRST_LOAD_TIME, SQL_TEXT from sys.view_table_user_SQL $where");
+  $query = oci_parse($conn, "Select PARSEUSER, COMMAND_TYPE, FIRST_LOAD_TIME, SQL_TEXT from sys.view_table_user_SQL $where");
   oci_execute($query);
   $rows = array();
-  while ($r = oci_fetch_array($query, OCI_ASSOC + OCI_RETURN_NULLS)){
+  while ($r = oci_fetch_array($query, OCI_ASSOC + OCI_RETURN_NULLS)) {
     $temp = array();
     $temp[] = (string) $r['PARSEUSER'];
     $temp[] = (string) $r['FIRST_LOAD_TIME'];
@@ -56,7 +67,7 @@ function getUsersSQL($conn){
 SGA Section
 */
 
-function getSGATable($conn)
+function getSGATable($conn, $HWM)
 {
   $query = oci_parse($conn, 'select USED_MB, TIME, TOTAL_MB from sys.job_SGA_Table');
   oci_execute($query);
@@ -66,7 +77,7 @@ function getSGATable($conn)
     $temp = array();
     $temp[] = (string) $r["TIME"];
     $temp[] = (float) $r["USED_MB"];
-    $temp[] = (float) $r["TOTAL_MB"] * 0.85;
+    $temp[] = (float) $r["TOTAL_MB"] * $HWM;
     $rows[] = $temp;
   }
   $var = json_encode($rows);
@@ -84,44 +95,59 @@ function getSGAMaxSize($conn)
   echo json_encode($result);
 }
 
-function isSGAGreatherHWM($conn){
-  $query = oci_parse($conn, 'begin :result := sys.fun_sga_usedSize; end;');
+function isSGAGreatherHWM($conn, $HWM)
+{
+  $query = oci_parse($conn, 'begin :result := sys.fun_sga_usedsize; end;');
   oci_bind_by_name($query, ':result', $result, 20);
   oci_execute($query);
   oci_free_statement($query);
-  if ($result >= (getSGAMaxSize($conn)*$HWM)) {
-    return true;
+
+  $sql = oci_parse($conn, 'begin :result := sys.fun_get_sga_maxsize; end;');
+  oci_bind_by_name($sql, ':result', $max, 20);
+  oci_execute($sql);
+  oci_free_statement($sql);
+  if ($result >= ($max * $HWM)) {
+    echo json_decode(1);
+  } else {
+    echo json_decode(0);
   }
-  return false;
 }
 
-function writeAlertCSV($alertArray){
-  $file = fopen($_SESSION['username'].'.csv', 'w');
+function writeAlertCSV($alertArray)
+{
+  $file = fopen($_SESSION['username'] . '.csv', 'a+');
   foreach ($alertArray as $fields) {
     fputcsv($file, $fields);
   }
   fclose($file);
 }
 
-function getSGAAlerts($conn){
-  $query = oci_parse($conn,'begin :cursor := sys.fun_get_sgaAlerts; end;');
+function getSGAAlerts($conn)
+{
+
+  setTimeFormat($conn);
+
+  $query = oci_parse($conn, 'begin :cursor := sys.fun_get_sgaAlerts; end;');
   $p_cursor = oci_new_cursor($conn);
 
   oci_bind_by_name($query, ':cursor', $p_cursor, -1, OCI_B_CURSOR);
   oci_execute($query);
   oci_execute($p_cursor, OCI_DEFAULT);
-  
+
   $alertArray = array();
 
-  while ($r = oci_fetch_array($p_cursor, OCI_ASSOC + OCI_RETURN_NULLS)) {
-    $temp = array();
-    $temp[] = (string) $r['USERNAME'];
-    $temp[] = (string) $r['LOAD_TIME'];
-    $temp[] = (string) $r['SQL'];
-    $alertArray[] = $temp;
-  }
+  if ($p_cursor != null) {
+    while ($r = oci_fetch_array($p_cursor, OCI_ASSOC + OCI_RETURN_NULLS)) {
+      $temp = array();
+      $temp[] = (string) $r['USERNAME'];
+      $temp[] = (string) $r['LOAD_TIME'];
+      $temp[] = (string) $r['SQL'];
+      $temp[] = (string) $r['STATUS'];
+      $alertArray[] = $temp;
+    }
 
-  writeAlertCSV($alertArray);
+    writeAlertCSV($alertArray);
+  }
 
   echo json_encode($alertArray);
 }
@@ -210,11 +236,12 @@ function getTSBarInfo($conn, $HWM)
 LOGS SECTION
 */
 
-function getLogsInfo($conn){
-  $query = oci_parse($conn,'begin :cursor := sys.fun_get_logsinfo; end;');
+function getLogsInfo($conn)
+{
+  $query = oci_parse($conn, 'begin :cursor := sys.fun_get_logsinfo; end;');
   $p_cursor = oci_new_cursor($conn);
   oci_bind_by_name($query, ':cursor', $p_cursor, -1, OCI_B_CURSOR);
-  
+
   oci_execute($query);
   oci_execute($p_cursor, OCI_DEFAULT);
 
@@ -231,7 +258,8 @@ function getLogsInfo($conn){
   echo json_encode($rows);
 }
 
-function getSwitchMinutes($conn){
+function getSwitchMinutes($conn)
+{
   $query = oci_parse($conn, 'begin :result := sys.switch_minutes_avg; end;');
   oci_bind_by_name($query, ':result', $result, 20);
   oci_execute($query);
@@ -239,9 +267,10 @@ function getSwitchMinutes($conn){
   echo json_encode($result);
 }
 
-function getLogMode($conn){
+function getLogMode($conn)
+{
   $query =  oci_parse($conn, 'begin :mode := sys.fun_get_logMode; end;');
-  oci_bind_by_name($query, ':mode', $result,16);
+  oci_bind_by_name($query, ':mode', $result, 16);
   oci_execute($query);
   oci_free_statement($query);
   echo json_encode($result);
@@ -249,33 +278,39 @@ function getLogMode($conn){
 
 //CONTROLLERR
 switch ($_GET['q']) {
-  /*
+    /*
   USER SQL
   */
   case 'usernames':
     getUsernames($conn);
     break;
-  
+
   case 'usersql':
     getUsersSQL($conn);
     break;
-  /*
+    /*
   SGA
   */
   case 'sga':
-    getSGATable($conn);
+    getSGATable($conn, $HWM);
     break;
 
   case 'sgasize':
     getSGAMaxSize($conn);
     break;
-  /*
+  case 'sgastatus':
+    isSGAGreatherHWM($conn, $HWM);
+    break;
+  case 'sgaalerts':
+    getSGAAlerts($conn);
+    break;
+    /*
   TABLESPACE
   */
   case 'tspie':
     getTSPieInfo($conn);
     break;
-  
+
   case 'tsnames':
     getTablespaceNames($conn);
     break;
@@ -283,7 +318,7 @@ switch ($_GET['q']) {
   case 'tsbar':
     getTSBarInfo($conn, $HWM);
     break;
-  /*
+    /*
   LOGS
   */
   case 'logsinfo':
@@ -293,7 +328,7 @@ switch ($_GET['q']) {
   case 'logsswitch':
     getSwitchMinutes($conn);
     break;
-  
+
   case 'logmode':
     getLogMode($conn);
     break;
