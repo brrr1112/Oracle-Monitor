@@ -109,7 +109,7 @@ END fun_get_isDiffLess5s;
 SHOW ERROR
 
 --prueba de la funcion
-SELECT fun_get_isDiffLess5s('2022-11-10/15:44:23') as VAL from dual;
+SELECT fun_get_isDiffLess5s('2022-11-14/14:14:23') as VAL from dual;
 
 CREATE OR REPLACE FUNCTION fun_get_sgaAlerts RETURN SYS_REFCURSOR IS
   cr SYS_REFCURSOR;
@@ -120,8 +120,8 @@ BEGIN
             vs.sql_text SQL,
             vs.OBJECT_STATUS status
         FROM v$sqlarea vs , all_users au
-        where (au.user_id(+)=vs.parsing_user_id) and (executions >= 1) 
-            AND fun_get_isDiffLess5s(first_load_time)=1 order by first_load_time asc;
+        where (au.user_id(+)=vs.parsing_user_id) and (executions >= 1)  AND fun_get_isDiffLess5s(first_load_time)=1
+        order by load_time asc;
     RETURN cr;
     EXCEPTION 
         WHEN no_data_found THEN RETURN NULL;
@@ -129,44 +129,11 @@ END fun_get_sgaAlerts;
 /
 show error
 
-
                     /*
                     TABLESPACE SECTION
                     */
-
---Nombres de los tablespace
-select tablespace_name from Dba_data_files;
-
-CREATE OR REPLACE FUNCTION fun_get_tablespace_info(Ptsname IN VARCHAR2) 
-  BEGIN
-    OPEN cr FOR
-    SELECT
-      ts.tablespace_name,
-      TRUNC("SIZE(B)", 2)                                  "BYTES_SIZE",
-      TRUNC(fr."FREE(B)", 2)                               "BYTES_FREE",
-      TRUNC("SIZE(B)" - "FREE(B)", 2)                      "BYTES_USED",
-      TRUNC((1 - (fr."FREE(B)" / df."SIZE(B)")) * 100, 10) "PCT_USED"
-    FROM
-      (SELECT
-         tablespace_name,
-         SUM(bytes) "FREE(B)"
-       FROM dba_free_space
-       GROUP BY tablespace_name) fr,
-      (SELECT
-         tablespace_name,
-         SUM(bytes)    "SIZE(B)",
-         SUM(maxbytes) "MAX_EXT"
-       FROM dba_data_files
-       GROUP BY tablespace_name) df,
-      (SELECT tablespace_name
-       FROM dba_tablespaces where tablespace_name = Ptsname ) ts
-    WHERE fr.tablespace_name = df.tablespace_name
-          AND fr.tablespace_name = ts.tablespace_name;
-    RETURN cr;
-  END;
-/
-
-
+                    
+                    
 SELECT
       ts.tablespace_name,
       TRUNC("SIZE(B)", 2)                                  "BYTES_SIZE",
@@ -178,15 +145,82 @@ FROM
       (SELECT tablespace_name FROM dba_tablespaces) ts
 WHERE fr.tablespace_name = df.tablespace_name AND fr.tablespace_name = ts.tablespace_name;
 
-SELECT TRUNC (first_time) "Fecha", TO_CHAR (first_time, \'Dy\') "Dia", COUNT (1) "Total", ROUND (COUNT (1) / 24, 3)*10 "Promedio"
-FROM gv$log_history
-WHERE thread# = inst_id AND first_time > sysdate -7
-GROUP BY TRUNC (first_time), inst_id, TO_CHAR (first_time, \'Dy\')
-ORDER BY 1,2
+
+
+CREATE OR REPLACE FUNCTION fun_get_TS_allinfo RETURN SYS_REFCURSOR IS
+  cr SYS_REFCURSOR;
+BEGIN
+    OPEN cr FOR
+        SELECT df.tablespace_name "NAME",
+            ROUND(df.bytes/(1024*1023),2) "USED(Mb)",
+            ROUND(df.maxbytes/(1024*1023),2) "TOTAL(Mb)",
+            ROUND((df.maxbytes - df.bytes)/(1024*1023),2) "FREE(MB)",
+            ROUND(SYSDATE - d.creation_time,0) "DAYS_CREATED"
+        FROM Dba_data_files df, v$datafile d
+        WHERE df.file_name = d.name;
+    RETURN cr;
+END;
+/
+SHOW ERROR
+
+
+
+
+SELECT
+   ts.tablespace_name, "File Count",
+   TRUNC("SIZE(MB)", 2) "Size(MB)",
+   TRUNC(fr."FREE(MB)", 2) "Free(MB)",
+   TRUNC("SIZE(MB)" - "FREE(MB)", 2) "Used(MB)",
+   df."MAX_EXT" "Max Ext(MB)",
+   (fr."FREE(MB)" / df."SIZE(MB)") * 100 "% Free"
+FROM
+   (SELECT tablespace_name, SUM (bytes) / (1024 * 1024) "FREE(MB)"
+   FROM dba_free_space
+    GROUP BY tablespace_name) fr,
+(SELECT tablespace_name, SUM(bytes) / (1024 * 1024) "SIZE(MB)", COUNT(*)
+"File Count", SUM(maxbytes) / (1024 * 1024) "MAX_EXT"
+FROM dba_data_files
+GROUP BY tablespace_name) df,
+(SELECT tablespace_name
+FROM dba_tablespaces) ts
+WHERE fr.tablespace_name = df.tablespace_name (+)
+AND fr.tablespace_name = ts.tablespace_name (+)
+ORDER BY "% Free" desc;
+
+
+select t.name tablespace_name,
+MIN(d.creation_time) CREATE_TIME,
+ROUND(SYSDATE - MIN(d.creation_time),0) DAYS_CREATED
+from v$datafile d, v$tablespace t
+where d.ts# = t.ts# 
+group by t.name order by 1;
+
+SELECT df.TABLESPACE_NAME, d.creation_time FROM V$DATAFILE d, DBA_DATA_FILES df where d.name=df.file_name;
+
+
+select df.tablespace_name "name",
+    ROUND(df.bytes/(1024*1023),2) "USED(Mb)",
+    ROUND(df.maxbytes/(1024*1023),2) "TOTAL(Mb)",
+    ROUND((df.maxbytes - df.bytes)/(1024*1023),2) "FREE(MB)",
+    ROUND(SYSDATE - d.creation_time,0) DAYS_CREATED
+from Dba_data_files df, v$datafile d
+where df.file_name = d.name;
+order by 1;
+
+
+
+
+SELECT NAME, CREATION_TIME, TS# FROM V$DATAFILE;
+SELECT * FROM V$TABLESPACE;
+SELECT * FROM DBA_DATA_FILES;
+
+
 
                             /*
                                 LOGFILE SECTION
                             */
+                            
+                            
 create or replace function date_to_unix_ts( PDate in date ) return number is
    l_unix_ts number;
 begin
