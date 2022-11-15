@@ -54,25 +54,25 @@
                         <label for="user"><h4  style="color:#ffffff">User:</h4></label><br>
                         <input type="text" id="user" name="user" value=""><br>
 
-                        <label for="password"><h4  style="color:#ffffff">Password:</h4></label><br>
+                        <label for="password"><h4  style="color:#ffffff; margin-top:20px",>Password:</h4></label><br>
                         <input type="password" id="password" name="password" value=""><br><br>
 
                         <label for="user"><h4  style="color:#ffffff">Location:</h4></label><br>
                         <input type="text" id="Location" name="Location" value="C:\app\"><br>
 
-                        <label for="user"><h4  style="color:#ffffff">File Name:</h4></label><br>
+                        <label for="user"><h4  style="color:#ffffff; margin-top:20px">File Name:</h4></label><br>
                         <input type="text" id="filename" name="fileName" value=""><br>
 
-                        <label for="tablespace"><h4  style="color:#ffffff">Tablespace name (I):</h4></label><br>
+                        <label for="tablespace"><h4  style="color:#ffffff; margin-top:20px">Tablespace name (I):</h4></label><br>
                         <input type="text" id="tablespace" name="tablespace" value=""><br>
 
                         <input type="checkbox" id="controlFile" name="controlFile" value="controlFile">
-                        <label for="controlFile"><h3 style="color:#ffffff">Include control Files(F)</h3></label><br>
+                        <label for="controlFile"><h3 style="color:#ffffff; margin-top:20px">Include control Files(F)</h3></label><br>
 
                         <input type="checkbox" id="logFile" name="logFile" value="logFile">
                         <label for="controlFile"><h3 style="color:#ffffff">Include log Files(F)</h3></label><br>
 
-                        <input type="submit" value="Submit">
+                        <input type="submit" value="Send">
                     </div>
                 </div>
             </form> 

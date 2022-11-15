@@ -37,14 +37,17 @@ body
     width: 100%;
     margin-top: 20px;
     margin-bottom: 40px;
+    box-shadow: 5px 5px 5px black;
 }
 
 .box1
 { 
+    box-shadow: 5px 5px 5px black;
     background: #2c2f33;
     border-radius: 10px;
     width: 1800px;
     height: 120px;
+    
 }
 
 .box1 p
@@ -137,24 +140,28 @@ body
 }
 
 .child.uno{
+   
     background: #2c2f33;
     color: white;
-    border-radius: 10%;
-    width: 320px;
-    height: 200px;
+    border-radius: 20px;
+    width: 380px;
+    height: 150px;
+    box-shadow: 5px 5px 5px black;
 }
 
 .child.dos{
     background: #2c2f33;
     color: white;
-    border-radius: 10%;
-    width: 320px;
-    height: 540px;
+    border-radius: 20px;
+    width: 380px;
+    height: 595px;
+    box-shadow: 5px 5px 5px black;
 }
 
 .preguntas{
+    padding-top:  10px;
     margin-left: 25px;
-    margin-top: 5px;
+    margin-top: 15px;
 }
 
 .correct{
@@ -173,4 +180,36 @@ body
     margin-left: 85%;
     max-width: 10%;
     max-height: 10%;
+}
+
+input{
+    outline-color: none;
+    color: white;
+    border: 0;
+    border-bottom: solid white;
+    background-color: transparent;
+
+}
+
+input[type="submit"]
+{
+    border: none;
+    outline: none;
+    background: #27a093;
+    padding: 11px 25px;
+    width: 100px;
+    margin-top: 20px;
+    margin-left: 120px;
+    border-radius: 4px;
+    font-weight: 600;
+    cursor: pointer;
+    align-items: center;
+    text-align: center;
+    transition: 0.5s;
+}
+
+input[type="submit"]:hover
+{
+   color: black;
+   transform: scale(1.1);
 }
