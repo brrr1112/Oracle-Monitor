@@ -155,7 +155,7 @@
                     fclose($myfile);
                     rmanFULL();
                     
-                    echo "<div><h2>ok</h2></div>";
+                    echo "<div class='correct'><h2>ok</h2></div>";
                   
                 }
 
@@ -168,7 +168,7 @@
                     fclose($myfile);
                     rmanFULL();
                    
-                    echo "<div><h2>ok</h2></div>";
+                    echo "<div class='correct'><h2>ok</h2></div>";
                     
                 }
 
@@ -181,8 +181,7 @@
                     fclose($myfile);
                     rmanFULL();
 
-                    echo "<div><h2>ok</h2></div>";
-                    
+                    echo "<div class='correct'><h2>ok</h2></div>";
                 }
             ?>
         
