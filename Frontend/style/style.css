@@ -225,16 +225,5 @@ input[type="submit"]:active
     color: white;
 }
 
-.Container{
-    display: flex;
-    flex-direction: crow;
-    gap: 5%;
-    flex-wrap: wrap;
-}
 
-.child{
-    flex-grow: 1;
-    width: 100px;
-    height: 200px;
-}
 

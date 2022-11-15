@@ -22,7 +22,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $_SESSION['connection_string'] = $connection_string = $_REQUEST['server'] . '/' . $_REQUEST['db'];
     $port = $_REQUEST['port'];
 
-    $conn = oci_connect($username, $password, $connection_string, null, OCI_SYSDBA);
+    $conn = oci_connect($username, $password, $connection_string,'', OCI_SYSDBA);
 
     if ($conn) {
         //echo "connected";
@@ -33,7 +33,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
 } elseif (session_status() == 2) {
     //echo $_SESSION['username'];
-    $conn = oci_connect($_SESSION['username'], $_SESSION['password'], $_SESSION['connection_string'], null, OCI_SYSDBA);
+    $conn = oci_connect($_SESSION['username'], $_SESSION['password'], $_SESSION['connection_string'],'', OCI_SYSDBA);
 }
 
 ?>

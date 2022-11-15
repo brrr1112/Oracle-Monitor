@@ -22,7 +22,7 @@
         <div class="row">
             <div class="header">
                 <div class="box1">
-                    <p class="title">Users Monitor</p>
+                    <p class="title">RMAN Monitor</p>
                     <img class="logo" src="img/logo.png">
                 </div>
             </div>
@@ -35,24 +35,37 @@
 
         <h1 class="title">RMAN</h1>
         <br>
-        <h2 class="title">Create Backup</h2>
+       
 
-        <div class="Container">
-            <div class="child1">
-                <form action="/action_page.php">
-                   
-                </form> 
+        <div class="flexcontainer">
+        <form action="<?php echo $_SERVER['PHP_SELF'] ?>" method="POST">
+            <div class="child uno">
+            <h2 class="title">Create Backup</h2>
+                    <input type="checkbox" id="fullbackup" name="fullbackup" value="Full Backup">
+                    <label for="fullbackup"><h3 style="color:#ffffff">Full Backup</h3></label><br>
+
+                    <input type="checkbox" id="Inconsistente" name="Inconsistente" value="Inconsistente">
+                    <label for="Inconsistente"><h3 style="color:#ffffff">Inconsistente</h3></label><br>
             </div>
-            <div class="child2">
-                <form action="<?php echo $_SERVER['PHP_SELF'] ?>" method="POST">
-                     <label for="user">First name:</label><br>
-                    <input type="text" id="user" name="user" value="user"><br>
+            <div class="child dos">
+                    <label for="user">First name:</label><br>
+                    <input type="text" id="user" name="user" value=""><br>
+
                     <label for="password">Last name:</label><br>
-                    <input type="password" id="password" name="password" value="password"><br><br>
+                    <input type="password" id="password" name="password" value=""><br><br>
+
+                    <label for="user">Location:</label><br>
+                    <input type="text" id="Location" name="Location" value="C:\app\"><br>
+
+                    <label for="user">File Name:</label><br>
+                    <input type="text" id="filename" name="fileName" value=""><br>
+
                     <input type="checkbox" id="controlFile" name="controlFile" value="controlFile">
                     <label for="controlFile"><h3 style="color:#ffffff">Include control Files</h3></label><br>
+
                     <input type="checkbox" id="logFile" name="logFile" value="logFile">
                     <label for="controlFile"><h3 style="color:#ffffff">Include log Files</h3></label><br>
+
                     <input type="submit" value="Submit">
                 </form> 
             </div>
@@ -60,59 +73,84 @@
             <?php
                 $user ="";
                 $password ="";
-                $controlFile ="";
-                $logFile ="";
-            if(!empty($_POST)){
+                $aux = "";
+                $Location= "";
+                $fileName= "";
+                $auxLF= "";
+
+                if(!empty($_POST['controlFile'])){
+                    $controlFile=$_POST['controlFile'];
+                }
+
+                if(!empty($_POST['logFile'])){
+                    $logFile=$_POST['logFile'];
+                }
+
+                if(!empty($_POST)){
                 $user=$_POST['user'];
                 $password=$_POST['password'];
-                $controlFile=$_POST['controlFile'];
-                $logFile=$_POST['logFile'];
+                $fileName=$_POST['fileName'];
+                $Location=$_POST['Location'];
+                }
+
+            if(!empty($_POST['Location']) and ($_POST['fileName'])){
+                $valor = $_POST['Location'];
+                $valor2 = $_POST['fileName'];
+                if(!empty($valor)){
+                    $auxLF = "$Location\%U_$fileName.bak";
+                }
             }
-                $myfile = fopen("rman.txt", "a") or die("Unable to open file!");
+
+            function setTimeFormat()
+            {
+                exec("cd C:\wamp64\www\Oracle_Monitor_SGA_TableSpce\Frontend");
+                exec("rman @rman.txt");
+            }
+            
+            if(!empty($_POST['logFile'])){
+                $myfile = fopen("rman.txt", "w+") or die("Unable to open file!");
                 $txt = "connect target /\n connect catalog $user/$password\n";
                 fwrite($myfile, $txt);
-                $txt = "run{allocate channel CH1 device type DISK format 'C:\app\BACKUPS/%U_backups_.bak'; backup database include current controlfile plus archivelog delete all input;}";
+                $txt = "run{allocate channel CH1 device type DISK format '$auxLF'; backup database plus archivelog;}";
                 fwrite($myfile, $txt);
                 fclose($myfile);
+                setTimeFormat();
+                if(setTimeFormat())
+                {
+                    echo "ok";
+                }
+            }
+
+            if(!empty($_POST['controlFile'])){
+                $myfile = fopen("rman.txt", "w+") or die("Unable to open file!");
+                $txt = "connect target /\n connect catalog $user/$password\n";
+                fwrite($myfile, $txt);
+                $txt = "run{allocate channel CH1 device type DISK format '$auxLF'; backup database include current controlfile;}";
+                fwrite($myfile, $txt);
+                fclose($myfile);
+                setTimeFormat();
+                if(setTimeFormat())
+                {
+                    echo "ok";
+                }
+            }
+
+            if(!empty($_POST['controlFile'])and($_POST['logFile'])){
+                $myfile = fopen("rman.txt", "w+") or die("Unable to open file!");
+                $txt = "connect target /\n connect catalog $user/$password\n";
+                fwrite($myfile, $txt);
+                $txt = "run{allocate channel CH1 device type DISK format '$auxLF'; backup database include current controlfile plus archivelog;}";
+                fwrite($myfile, $txt);
+                fclose($myfile);
+                setTimeFormat();
+                if(setTimeFormat())
+                {
+                    echo "ok";
+                }
+            }
             ?>
-
-
         </div>
-
-
-
     </div>
 </body>
 
 </html>
-
-<!--
-<div class="form-control">
-            <br><div class="table-responsive">
-                <table class="table">
-                    <thead class="text-muted">
-                        <th>Log Mode</th>
-            
-                    </thead>    
-                    <tbody>
-                            
-                        <?php while($row = oci_fetch_array($sto, OCI_ASSOC+OCI_RETURN_NULLS)){?>
-                            <tr>
-                                <td><?php echo $row['LOG_MODE']; ?></td>
-                            </tr>
-                        <?php } ?>
-                           
-                    </tbody>                  
-                </table>
-            </div>
-</div>
-
-<?php
-    include_once('Oracle.php');
-
-    $sto = oci_parse($conn,'select LOG_MODE from V$DATABASE');
-    oci_execute($sto);
-    $resultado = oci_execute($sto);
-    oci_close($conn);
-?>
--->

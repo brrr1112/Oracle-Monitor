@@ -123,3 +123,28 @@ body
     color: white;
     table-layout: auto;
 }
+
+.flexcontainer{
+    display: flex;
+    flex-direction: crow;
+    gap: 5%;
+    flex-wrap: wrap;
+}
+
+.child{
+    flex-grow: 1;
+    width: 120px;
+    height: 350px;
+}
+
+.child.uno{
+    background: #2c2f33;
+    color: white;
+    border-radius: 10%;
+}
+
+.child.dos{
+    background: #2c2f33;
+    color: white;
+    border-radius: 10%;
+}
