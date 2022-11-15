@@ -138,10 +138,9 @@
                     fwrite($myfile, $txt);
                     fclose($myfile);
                     rmanFULL();
-                    if(rmanInconsistente())
-                    {
-                        echo "ok";
-                    }
+                   
+                    echo "<div><h2>ok</h2></div>";
+
                 }
            
                 if(!empty($_POST['logFile']) and ($_POST['fullbackup']) ){
@@ -152,10 +151,9 @@
                     fwrite($myfile, $txt);
                     fclose($myfile);
                     rmanFULL();
-                    if(rmanFULL())
-                    {
-                        echo "ok";
-                    }
+                    
+                    echo "<div><h2>ok</h2></div>";
+                  
                 }
 
                 if(!empty($_POST['controlFile']) and ($_POST['fullbackup'])){
@@ -166,10 +164,9 @@
                     fwrite($myfile, $txt);
                     fclose($myfile);
                     rmanFULL();
-                    if(rmanFULL())
-                    {
-                        echo "ok";
-                    }
+                   
+                    echo "<div><h2>ok</h2></div>";
+                    
                 }
 
                 if(!empty($_POST['controlFile'])and($_POST['logFile']) and ($_POST['fullbackup'])){
@@ -180,10 +177,9 @@
                     fwrite($myfile, $txt);
                     fclose($myfile);
                     rmanFULL();
-                    if(rmanFULL())
-                    {
-                        echo "ok";
-                    }
+
+                    echo "<div><h2>ok</h2></div>";
+                    
                 }
             ?>
         
