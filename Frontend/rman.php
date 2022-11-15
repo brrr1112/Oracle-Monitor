@@ -38,37 +38,42 @@
        
 
         <div class="flexcontainer">
-        <form action="<?php echo $_SERVER['PHP_SELF'] ?>" method="POST">
-            <div class="child uno">
-            <h2 class="title">Create Backup</h2>
+            <form action="<?php echo $_SERVER['PHP_SELF'] ?>" method="POST">
+                <div class="child uno">
+                    <h2 class="title">Create Backup</h2>
                     <input type="checkbox" id="fullbackup" name="fullbackup" value="Full Backup">
                     <label for="fullbackup"><h3 style="color:#ffffff">Full Backup</h3></label><br>
 
-                    <input type="checkbox" id="Inconsistente" name="Inconsistente" value="Inconsistente">
-                    <label for="Inconsistente"><h3 style="color:#ffffff">Inconsistente</h3></label><br>
-            </div>
-            <div class="child dos">
-                    <label for="user">First name:</label><br>
+                    <input type="checkbox" id="inconsistente" name="inconsistente" value="inconsistente">
+                    <label for="inconsistente"><h3 style="color:#ffffff">Inconsistent</h3></label><br>
+                </div>
+                <div class="child dos">
+                    <label for="user"><h4  style="color:#ffffff">User:</h4></label><br>
                     <input type="text" id="user" name="user" value=""><br>
 
-                    <label for="password">Last name:</label><br>
+                    <label for="password"><h4  style="color:#ffffff">Password:</h4></label><br>
                     <input type="password" id="password" name="password" value=""><br><br>
 
-                    <label for="user">Location:</label><br>
+                    <label for="user"><h4  style="color:#ffffff">Location:</h4></label><br>
                     <input type="text" id="Location" name="Location" value="C:\app\"><br>
 
-                    <label for="user">File Name:</label><br>
+                    <label for="user"><h4  style="color:#ffffff">File Name:</h4></label><br>
                     <input type="text" id="filename" name="fileName" value=""><br>
 
+                    <label for="tablespace"><h4  style="color:#ffffff">Tablespace name (I):</h4></label><br>
+                    <input type="text" id="tablespace" name="tablespace" value=""><br>
+
                     <input type="checkbox" id="controlFile" name="controlFile" value="controlFile">
-                    <label for="controlFile"><h3 style="color:#ffffff">Include control Files</h3></label><br>
+                    <label for="controlFile"><h3 style="color:#ffffff">Include control Files(F)</h3></label><br>
 
                     <input type="checkbox" id="logFile" name="logFile" value="logFile">
-                    <label for="controlFile"><h3 style="color:#ffffff">Include log Files</h3></label><br>
+                    <label for="controlFile"><h3 style="color:#ffffff">Include log Files(F)</h3></label><br>
 
                     <input type="submit" value="Submit">
-                </form> 
-            </div>
+                    
+                </div>
+            </form> 
+        </div>
 
             <?php
                 $user ="";
@@ -86,6 +91,18 @@
                     $logFile=$_POST['logFile'];
                 }
 
+                if(!empty($_POST['fullbackup'])){
+                    $fullbackup=$_POST['fullbackup'];
+                }
+
+                if(!empty($_POST['inconsistente'])){
+                    $inconsistente=$_POST['inconsistente'];
+                }
+
+                if(!empty($_POST['tablespace'])){
+                    $tablespace=$_POST['tablespace'];
+                }
+
                 if(!empty($_POST)){
                 $user=$_POST['user'];
                 $password=$_POST['password'];
@@ -93,63 +110,83 @@
                 $Location=$_POST['Location'];
                 }
 
-            if(!empty($_POST['Location']) and ($_POST['fileName'])){
-                $valor = $_POST['Location'];
-                $valor2 = $_POST['fileName'];
-                if(!empty($valor)){
-                    $auxLF = "$Location\%U_$fileName.bak";
+                if(!empty($_POST['Location']) and ($_POST['fileName'])){
+                    $valor = $_POST['Location'];
+                    $valor2 = $_POST['fileName'];
+                    if(!empty($valor)){
+                        $auxLF = "$Location\%U_$fileName.bak";
+                    }
                 }
-            }
 
-            function setTimeFormat()
-            {
-                exec("cd C:\wamp64\www\Oracle_Monitor_SGA_TableSpce\Frontend");
-                exec("rman @rman.txt");
-            }
-            
-            if(!empty($_POST['logFile'])){
-                $myfile = fopen("rman.txt", "w+") or die("Unable to open file!");
-                $txt = "connect target /\n connect catalog $user/$password\n";
-                fwrite($myfile, $txt);
-                $txt = "run{allocate channel CH1 device type DISK format '$auxLF'; backup database plus archivelog;}";
-                fwrite($myfile, $txt);
-                fclose($myfile);
-                setTimeFormat();
-                if(setTimeFormat())
+                function rmanFULL()
                 {
-                    echo "ok";
+                    exec("cd C:\wamp64\www\Oracle_Monitor_SGA_TableSpce\Frontend");
+                    exec("rman @rman.txt");
                 }
-            }
 
-            if(!empty($_POST['controlFile'])){
-                $myfile = fopen("rman.txt", "w+") or die("Unable to open file!");
-                $txt = "connect target /\n connect catalog $user/$password\n";
-                fwrite($myfile, $txt);
-                $txt = "run{allocate channel CH1 device type DISK format '$auxLF'; backup database include current controlfile;}";
-                fwrite($myfile, $txt);
-                fclose($myfile);
-                setTimeFormat();
-                if(setTimeFormat())
+                function rmanInconsistente()
                 {
-                    echo "ok";
+                    exec("cd C:\wamp64\www\Oracle_Monitor_SGA_TableSpce\Frontend");
+                    exec("rman @rman01.txt");
                 }
-            }
+               
+                if(!empty($_POST['tablespace']) and ($_POST['inconsistente']) ){
+                    $myfile = fopen("rman01.txt", "w+") or die("Unable to open file!");
+                    $txt = "connect target /\n connect catalog $user/$password\n";
+                    fwrite($myfile, $txt);
+                    $txt = "run{allocate channel CH1 device type DISK format '$auxLF'; backup tablespace $tablespace;}";
+                    fwrite($myfile, $txt);
+                    fclose($myfile);
+                    rmanFULL();
+                    if(rmanInconsistente())
+                    {
+                        echo "ok";
+                    }
+                }
+           
+                if(!empty($_POST['logFile']) and ($_POST['fullbackup']) ){
+                    $myfile = fopen("rman.txt", "w+") or die("Unable to open file!");
+                    $txt = "connect target /\n connect catalog $user/$password\n";
+                    fwrite($myfile, $txt);
+                    $txt = "run{allocate channel CH1 device type DISK format '$auxLF'; backup database plus archivelog;}";
+                    fwrite($myfile, $txt);
+                    fclose($myfile);
+                    rmanFULL();
+                    if(rmanFULL())
+                    {
+                        echo "ok";
+                    }
+                }
 
-            if(!empty($_POST['controlFile'])and($_POST['logFile'])){
-                $myfile = fopen("rman.txt", "w+") or die("Unable to open file!");
-                $txt = "connect target /\n connect catalog $user/$password\n";
-                fwrite($myfile, $txt);
-                $txt = "run{allocate channel CH1 device type DISK format '$auxLF'; backup database include current controlfile plus archivelog;}";
-                fwrite($myfile, $txt);
-                fclose($myfile);
-                setTimeFormat();
-                if(setTimeFormat())
-                {
-                    echo "ok";
+                if(!empty($_POST['controlFile']) and ($_POST['fullbackup'])){
+                    $myfile = fopen("rman.txt", "w+") or die("Unable to open file!");
+                    $txt = "connect target /\n connect catalog $user/$password\n";
+                    fwrite($myfile, $txt);
+                    $txt = "run{allocate channel CH1 device type DISK format '$auxLF'; backup database include current controlfile;}";
+                    fwrite($myfile, $txt);
+                    fclose($myfile);
+                    rmanFULL();
+                    if(rmanFULL())
+                    {
+                        echo "ok";
+                    }
                 }
-            }
+
+                if(!empty($_POST['controlFile'])and($_POST['logFile']) and ($_POST['fullbackup'])){
+                    $myfile = fopen("rman.txt", "w+") or die("Unable to open file!");
+                    $txt = "connect target /\n connect catalog $user/$password\n";
+                    fwrite($myfile, $txt);
+                    $txt = "run{allocate channel CH1 device type DISK format '$auxLF'; backup database include current controlfile plus archivelog;}";
+                    fwrite($myfile, $txt);
+                    fclose($myfile);
+                    rmanFULL();
+                    if(rmanFULL())
+                    {
+                        echo "ok";
+                    }
+                }
             ?>
-        </div>
+        
     </div>
 </body>
 
