@@ -77,3 +77,30 @@ function drawBarChart() {
     var chart = new google.visualization.BarChart(document.getElementById("barchart_values"));
     chart.draw(data, options);
 }
+
+function getTable(){
+    let tbstable;
+    console.log("FUNCTION");
+    $.ajax({
+        url: "http://localhost/Oracle_Monitor_SGA_TableSpce/server/results.php?q=",
+        dataType: 'json',
+        async: false,
+        success: function (response) {
+            //console.log("BEFORE");
+            console.log(response);
+            //console.log("After");
+            tbstable = response;
+        }
+    }).responsetext;
+
+    document.getElementById("table").getElementsByTagName("tbody")[0].remove()
+    document.getElementById("table").append(document.createElement("tbody", { id: "tablebody" }));
+    
+    for (const row of tbstable) {
+        var r = document.getElementById("table").getElementsByTagName("tbody")[0].insertRow(-1);
+        for (const data of row) {
+            var cell = r.insertCell(-1);
+            cell.innerHTML = data;
+        }
+    }
+}

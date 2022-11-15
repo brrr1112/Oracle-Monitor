@@ -3,7 +3,7 @@
 header('Content-Type: application/json');
 include_once('oracle.php');
 
-$HWM = 0.50;
+$HWM = 0.95;
 
 function setTimeFormat($conn)
 {

@@ -102,3 +102,8 @@ body
     align-items: center; 
     justify-content: center;
 }
+
+.table {
+    color: white;
+    table-layout: auto;
+}
