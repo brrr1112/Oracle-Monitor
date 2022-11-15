@@ -149,6 +149,20 @@ body
     border-radius: 10%;
 }
 
-.h2{
-    color: white;
+.correct{
+    background: limegreen;
+    font-size: 4vw;
+    color:black;
+    margin-left: 85%;
+    max-width: 4%;
+    max-height: 10%;
+}
+
+.error{
+    background:red;
+    font-size: 4vw;
+    color:black;
+    margin-left: 85%;
+    max-width: 4%;
+    max-height: 10%;
 }

@@ -137,9 +137,9 @@
                     $txt = "run{allocate channel CH1 device type DISK format '$auxLF'; backup tablespace $tablespace;}";
                     fwrite($myfile, $txt);
                     fclose($myfile);
-                    rmanFULL();
+                    rmanInconsistente();
                    
-                    echo "<div><h2>ok</h2></div>";
+                    echo "<div class='correct'><h2>ok</h2></div>";
 
                 }
            
