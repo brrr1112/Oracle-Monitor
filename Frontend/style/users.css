@@ -126,27 +126,35 @@ body
 
 .flexcontainer{
     display: flex;
-    flex-direction: crow;
+    flex-direction:row;
     gap: 5%;
-    flex-wrap: wrap;
+    justify-content: center;
 }
 
 .child{
     flex-grow: 1;
-    width: 120px;
-    height: 350px;
+    margin-top: 10px;
 }
 
 .child.uno{
     background: #2c2f33;
     color: white;
     border-radius: 10%;
+    width: 320px;
+    height: 200px;
 }
 
 .child.dos{
     background: #2c2f33;
     color: white;
     border-radius: 10%;
+    width: 320px;
+    height: 540px;
+}
+
+.preguntas{
+    margin-left: 25px;
+    margin-top: 5px;
 }
 
 .correct{
@@ -163,6 +171,6 @@ body
     font-size: 4vw;
     color:black;
     margin-left: 85%;
-    max-width: 4%;
+    max-width: 10%;
     max-height: 10%;
 }

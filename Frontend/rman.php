@@ -40,37 +40,40 @@
         <div class="flexcontainer">
             <form action="<?php echo $_SERVER['PHP_SELF'] ?>" method="POST">
                 <div class="child uno">
-                    <h2 class="title">Create Backup</h2>
-                    <input type="checkbox" id="fullbackup" name="fullbackup" value="Full Backup">
-                    <label for="fullbackup"><h3 style="color:#ffffff">Full Backup</h3></label><br>
+                    <div class="preguntas">
+                        <h2 class="title">Create Backup</h2>
+                        <input type="checkbox" id="fullbackup" name="fullbackup" value="Full Backup">
+                        <label for="fullbackup"><h3 style="color:#ffffff">Full Backup</h3></label><br>
 
-                    <input type="checkbox" id="inconsistente" name="inconsistente" value="inconsistente">
-                    <label for="inconsistente"><h3 style="color:#ffffff">Inconsistent</h3></label><br>
+                        <input type="checkbox" id="inconsistente" name="inconsistente" value="inconsistente">
+                        <label for="inconsistente"><h3 style="color:#ffffff">Inconsistent</h3></label><br>
+                    </div>
                 </div>
                 <div class="child dos">
-                    <label for="user"><h4  style="color:#ffffff">User:</h4></label><br>
-                    <input type="text" id="user" name="user" value=""><br>
+                    <div class="preguntas">
+                        <label for="user"><h4  style="color:#ffffff">User:</h4></label><br>
+                        <input type="text" id="user" name="user" value=""><br>
 
-                    <label for="password"><h4  style="color:#ffffff">Password:</h4></label><br>
-                    <input type="password" id="password" name="password" value=""><br><br>
+                        <label for="password"><h4  style="color:#ffffff">Password:</h4></label><br>
+                        <input type="password" id="password" name="password" value=""><br><br>
 
-                    <label for="user"><h4  style="color:#ffffff">Location:</h4></label><br>
-                    <input type="text" id="Location" name="Location" value="C:\app\"><br>
+                        <label for="user"><h4  style="color:#ffffff">Location:</h4></label><br>
+                        <input type="text" id="Location" name="Location" value="C:\app\"><br>
 
-                    <label for="user"><h4  style="color:#ffffff">File Name:</h4></label><br>
-                    <input type="text" id="filename" name="fileName" value=""><br>
+                        <label for="user"><h4  style="color:#ffffff">File Name:</h4></label><br>
+                        <input type="text" id="filename" name="fileName" value=""><br>
 
-                    <label for="tablespace"><h4  style="color:#ffffff">Tablespace name (I):</h4></label><br>
-                    <input type="text" id="tablespace" name="tablespace" value=""><br>
+                        <label for="tablespace"><h4  style="color:#ffffff">Tablespace name (I):</h4></label><br>
+                        <input type="text" id="tablespace" name="tablespace" value=""><br>
 
-                    <input type="checkbox" id="controlFile" name="controlFile" value="controlFile">
-                    <label for="controlFile"><h3 style="color:#ffffff">Include control Files(F)</h3></label><br>
+                        <input type="checkbox" id="controlFile" name="controlFile" value="controlFile">
+                        <label for="controlFile"><h3 style="color:#ffffff">Include control Files(F)</h3></label><br>
 
-                    <input type="checkbox" id="logFile" name="logFile" value="logFile">
-                    <label for="controlFile"><h3 style="color:#ffffff">Include log Files(F)</h3></label><br>
+                        <input type="checkbox" id="logFile" name="logFile" value="logFile">
+                        <label for="controlFile"><h3 style="color:#ffffff">Include log Files(F)</h3></label><br>
 
-                    <input type="submit" value="Submit">
-                    
+                        <input type="submit" value="Submit">
+                    </div>
                 </div>
             </form> 
         </div>
