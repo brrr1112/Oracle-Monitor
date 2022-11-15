@@ -82,7 +82,7 @@ function getTable(){
     let tbstable;
     console.log("FUNCTION");
     $.ajax({
-        url: "http://localhost/Oracle_Monitor_SGA_TableSpce/server/results.php?q=",
+        url: "http://localhost/Oracle_Monitor_SGA_TableSpce/server/results.php?q=tsinfo",
         dataType: 'json',
         async: false,
         success: function (response) {

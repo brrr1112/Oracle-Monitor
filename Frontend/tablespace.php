@@ -29,21 +29,22 @@
 
     <!–this is the div that will hold the pie chart–>
     <div class="piechart" id="piechart" style="width: 700px; height: 500px; display: inline-block; margin-left:100px; float:none;"></div>
-    <div id="barchart_values" style="width: 900px; height: 40%; display: inline-block; margin-left:100px; float:none;"></div>
     
+    <div id="barchart_values" style="width: 900px; height: 40%; display: inline-block; margin-left:100px; float:none;"></div>
+        <br>
         <div class="table-responsive">
           <table id="table" class="table" style="table-layout: fixed">
-            <thead class="text-start">
-              <th>Name</th>
-              <th>Used (MB)</th>
-              <th>Free (MB)</th>
-              <th>Total (MB)</th>
-              <th>HWM (MB)</th>
-              <th>Daily_grow (MB)</th>
-              <th>Remaining_Time (MB)</th>
-            </thead>
-            <tbody id="tablebody">
-            </tbody>
+                <thead class="text-start">
+                <th>Name</th>
+                <th>Used (MB)</th>
+                <th>Free (MB)</th>
+                <th>Total (MB)</th>
+                <th>HWM (MB)</th>
+                <th>Daily_grow (MB)</th>
+                <th>Remaining_Time (MB)</th>
+                </thead>
+                <tbody id="tablebody">
+                </tbody>
           </table>
         </div>
     
