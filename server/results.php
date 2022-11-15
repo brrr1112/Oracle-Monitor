@@ -232,6 +232,37 @@ function getTSBarInfo($conn, $HWM)
   echo $var;
 }
 
+function getTSAllInfo($conn, $HWM){
+  $query = oci_parse($conn, 'begin :cursor := sys.fun_get_TS_allInfo; end;');
+  $p_cursor = oci_new_cursor($conn);
+
+  oci_bind_by_name($query, ':cursor', $p_cursor, -1, OCI_B_CURSOR);
+  oci_execute($query);
+  oci_execute($p_cursor, OCI_DEFAULT);
+
+  $tsinfo = array();
+
+  if ($p_cursor != null) {
+    while ($r = oci_fetch_array($p_cursor, OCI_ASSOC + OCI_RETURN_NULLS)) {
+      $temp = array();
+      $temp[] = (string) $r['NAME'];
+      $used = $temp[] = (float) $r['USED(Mb)'];
+      $free = $temp[] = (float) $r['FREE(Mb)'];
+      $tot = $temp[] = (string) $r['TOTAL(Mb)'];
+      //HWM
+      $temp[] = $tot*$HWM;
+      $days = (int) $r['DAYS_CREATED'];
+      //DAILY GROW
+      $dw = $tem[] = round($used/$days,2);
+      //REMAINING_TIME
+      $temp[] = round($free/$dw,2);
+      $tsinfo[] = $temp;
+    }
+  }
+
+  echo json_encode($tsinfo);
+}
+
 /*
 LOGS SECTION
 */
@@ -318,6 +349,9 @@ switch ($_GET['q']) {
   case 'tsbar':
     getTSBarInfo($conn, $HWM);
     break;
+  case 'tsinfo':
+    getTSAllInfo($conn, $HWM);
+    break;
     /*
   LOGS
   */
@@ -333,5 +367,5 @@ switch ($_GET['q']) {
     getLogMode($conn);
     break;
 
-    oci_close($conn);
+  oci_close($conn);
 }
