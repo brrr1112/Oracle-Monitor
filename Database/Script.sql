@@ -154,7 +154,7 @@ BEGIN
         SELECT df.tablespace_name "NAME",
             ROUND(df.bytes/(1024*1023),2) "USED(Mb)",
             ROUND(df.maxbytes/(1024*1023),2) "TOTAL(Mb)",
-            ROUND((df.maxbytes - df.bytes)/(1024*1023),2) "FREE(MB)",
+            ROUND((df.maxbytes - df.bytes)/(1024*1023),2) "FREE(Mb)",
             ROUND(SYSDATE - d.creation_time,0) "DAYS_CREATED"
         FROM Dba_data_files df, v$datafile d
         WHERE df.file_name = d.name;

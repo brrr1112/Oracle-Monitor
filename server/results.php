@@ -248,16 +248,18 @@ function getTSAllInfo($conn, $HWM){
       $temp[] = (string) $r['NAME'];
       $used = $temp[] = (float) $r['USED(Mb)'];
       $free = $temp[] = (float) $r['FREE(Mb)'];
-      $tot = $temp[] = (string) $r['TOTAL(Mb)'];
+      $tot = $temp[] = (float) $r['TOTAL(Mb)'];
       //HWM
       $temp[] = $tot*$HWM;
       $days = (int) $r['DAYS_CREATED'];
       //DAILY GROW
-      $dw = $tem[] = round($used/$days,2);
+      $dw = $temp[] = round($used/$days,2);
       //REMAINING_TIME
       $temp[] = round($free/$dw,2);
       $tsinfo[] = $temp;
     }
+    oci_free_statement($query);
+    oci_free_cursor($p_cursor);
   }
 
   echo json_encode($tsinfo);

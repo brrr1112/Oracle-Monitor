@@ -9,7 +9,7 @@ $.ajax({
     dataType: 'json',
     async: false,
     success: function (response) {
-        console.log(response);
+        //console.log(response);
         tspie = response;
     }
 }).responsetext;
@@ -36,14 +36,14 @@ $.ajax({
     dataType: 'json',
     async: false,
     success: function (response) {
-        console.log(response);
+        //console.log(response);
         tsnames = response;
     }
 }).responsetext;
 
 
 google.charts.load("current", { packages: ["corechart"] });
-google.charts.setOnLoadCallback(drawChart);
+google.charts.setOnLoadCallback(drawBarChart);
 
 function drawBarChart() {
     var tsdata;
@@ -52,7 +52,7 @@ function drawBarChart() {
         dataType: 'json',
         async: false,
         success: function (response) {
-            console.log(response);
+            //console.log(response);
             tsbar = response;
         }
     }).responsetext;
@@ -80,21 +80,21 @@ function drawBarChart() {
 
 function getTable(){
     let tbstable;
-    console.log("FUNCTION");
+    //console.log("FUNCTION");
     $.ajax({
         url: "http://localhost/Oracle_Monitor_SGA_TableSpce/server/results.php?q=tsinfo",
         dataType: 'json',
         async: false,
         success: function (response) {
             //console.log("BEFORE");
-            console.log(response);
+           // console.log(response);
             //console.log("After");
             tbstable = response;
         }
     }).responsetext;
 
-    document.getElementById("table").getElementsByTagName("tbody")[0].remove()
-    document.getElementById("table").append(document.createElement("tbody", { id: "tablebody" }));
+    //document.getElementById("table").getElementsByTagName("tbody")[0].remove()
+    //document.getElementById("table").append(document.createElement("tbody", { id: "tablebody" }));
     
     for (const row of tbstable) {
         var r = document.getElementById("table").getElementsByTagName("tbody")[0].insertRow(-1);
@@ -104,3 +104,5 @@ function getTable(){
         }
     }
 }
+
+getTable();

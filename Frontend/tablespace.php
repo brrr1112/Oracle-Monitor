@@ -14,7 +14,8 @@
     <link rel="stylesheet" href="style/tablespace.css">
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.1/jquery.min.js"></script>
     <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
-    <script type="text/javascript" src="js/tablespace.js"></script>
+    <script defer type="text/javascript" src="js/tablespace.js"></script>
+    
 </head>
 
 <body>
@@ -28,12 +29,15 @@
     </div>
 
     <!–this is the div that will hold the pie chart–>
-    <div class="piechart" id="piechart" style="width: 700px; height: 500px; display: inline-block; margin-left:100px; float:none;"></div>
+        <div class="d-flex justify-content-evenly">
+            <div class="piechart" id="piechart" style="width: 700px; height: 500px; "></div>
     
-    <div id="barchart_values" style="width: 900px; height: 40%; display: inline-block; margin-left:100px; float:none;"></div>
+            <div id="barchart_values" style="width: 900px; height: 40%; "></div>
+
+        </div>
         <br>
-        <div class="table-responsive">
-          <table id="table" class="table" style="table-layout: fixed">
+        <div class="table-responsive container">
+          <table id="table" class="table" style="table-layout: fixed;">
                 <thead class="text-start">
                 <th>Name</th>
                 <th>Used (MB)</th>
