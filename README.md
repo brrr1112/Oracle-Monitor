@@ -12,3 +12,5 @@ RMAN Backup Status: Check the status of RMAN backups, including full, incrementa
 Customizable Dashboards: Create personalized dashboards that display the specific metrics and information you need at a glance. Customize charts, graphs, and tables based on your monitoring priorities.
 
 Historical Data Analysis: Store historical monitoring data to analyze trends and patterns over time. This information can help in capacity planning and identifying long-term performance issues.
+
+![image](https://github.com/user-attachments/assets/44d95925-1d2d-4f70-beb1-184ddca9df2c)
