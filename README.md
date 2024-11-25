@@ -14,3 +14,5 @@ Customizable Dashboards: Create personalized dashboards that display the specifi
 Historical Data Analysis: Store historical monitoring data to analyze trends and patterns over time. This information can help in capacity planning and identifying long-term performance issues.
 
 ![image](https://github.com/user-attachments/assets/44d95925-1d2d-4f70-beb1-184ddca9df2c)
+
+![image](https://github.com/user-attachments/assets/d515210b-15ac-41c9-a5cf-19e66f73a983)
