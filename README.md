@@ -1,5 +1,7 @@
 # Oracle_Monitor_SGA_TableSpce
 
+https://deepwiki.com/brrr1112/Oracle-Monitor/1-oracle-monitor-system-overview
+
 The Oracle Database Monitoring Tool is a utility designed to help database administrators (DBAs) and system administrators monitor and manage various aspects of an Oracle database, including System Global Area (SGA) usage, tablespace utilization, and Recovery Manager (RMAN) backups. This tool provides insights into the health and performance of the Oracle database, allowing for proactive management and issue resolution.
 
 Features
