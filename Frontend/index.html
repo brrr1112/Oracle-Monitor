@@ -14,6 +14,11 @@
         <div class="form">
             <img class="imagen" src="img/logo.png">
             <!--<h2>Sign in </h2>-->
+
+            <div id="errorMessage" style="color: red; text-align: center; margin-bottom: 15px;">
+                <!-- Error messages will be displayed here -->
+            </div>
+
             <form action="../server/Oracle.php" method="POST">
 
                 <div class="inputbox">
@@ -29,25 +34,20 @@
                 </div>
 
                 <div class="inputbox">
-                    <div class="server-banner">
-                        <label>Server:</label>
-                        <select id="servers" name="server" class="dropdown-list">
-                            <option selected="selected" disabled>Choose a server</option>
-                        </select>
-                        <input type="hidden">
-                        <i></i>
-                    </div>
+                    <input type="text" required="required" name="server" placeholder="Hostname or IP Address">
+                    <span>Server Host/IP</span>
+                    <i></i>
                 </div>
 
                 <div class="inputbox">
-                    <input type="text" name="port">
+                    <input type="text" name="port" placeholder="Default: 1521">
                     <span>Port</span>
                     <i></i>
                 </div>
 
                 <div class="inputbox">
-                    <input type="text" required="required" name="db">
-                    <span>Database Name</span>
+                    <input type="text" required="required" name="db" placeholder="Service Name or SID">
+                    <span>Database Name (Service/SID)</span>
                     <i></i>
                 </div>
 
@@ -59,6 +59,20 @@
             </form>
         </div>
     </div>
+    <script type="text/javascript">
+        document.addEventListener('DOMContentLoaded', function() {
+            const params = new URLSearchParams(window.location.search);
+            const error = params.get('error');
+            if (error) {
+                const errorMessageDiv = document.getElementById('errorMessage');
+                if (errorMessageDiv) {
+                    errorMessageDiv.textContent = decodeURIComponent(error);
+                }
+                // Optional: Remove the error from URL to prevent it showing on refresh if user manually refreshes
+                // window.history.replaceState({}, document.title, window.location.pathname + window.location.hash);
+            }
+        });
+    </script>
 </body>
 
 
