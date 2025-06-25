@@ -1,0 +1,353 @@
+openapi: 3.0.0
+info:
+  title: Oracle Monitor Backend API
+  description: API for managing Oracle database connections and fetching monitoring data.
+  version: "1.0.0"
+servers:
+  # Replace with your actual server URL when deploying
+  - url: http://localhost/Oracle_Monitor_SGA_TableSpce
+    description: Development server
+
+security:
+  - cookieAuth: [] # Indicates that session cookies are used for authentication
+
+paths:
+  /server/connections_handler.php?action=list:
+    get:
+      summary: List user's saved Oracle DB connection profiles
+      tags:
+        - Connection Profiles
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          description: A list of connection profiles.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  connections:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        conn_id:
+                          type: integer
+                          example: 1
+                        profile_name:
+                          type: string
+                          example: "Prod DB"
+                        db_host:
+                          type: string
+                          example: "dbhost.example.com"
+                        db_port:
+                          type: string
+                          example: "1521"
+                        db_service_name:
+                          type: string
+                          example: "ORCLPDB1"
+                        db_user:
+                          type: string
+                          example: "monitor_user"
+                        created_at:
+                          type: string
+                          format: date-time
+                          example: "YYYY-MM-DD HH:MM:SS"
+        '401':
+          description: Authentication required.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Server or database error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /server/connections_handler.php?action=add:
+    post:
+      summary: Add a new Oracle DB connection profile
+      tags:
+        - Connection Profiles
+      security:
+        - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              properties:
+                profile_name:
+                  type: string
+                  description: "User-defined name for the profile (e.g., Dev DB1)"
+                db_host:
+                  type: string
+                  description: "Hostname or IP address of the Oracle DB"
+                db_port:
+                  type: string
+                  description: "Port number (defaults to 1521 if empty)"
+                  default: "1521"
+                db_service_name:
+                  type: string
+                  description: "Oracle Service Name or SID"
+                db_user:
+                  type: string
+                  description: "Username for connecting to the Oracle DB"
+                db_password:
+                  type: string
+                  format: password
+                  description: "Password for the Oracle DB user"
+              required:
+                - profile_name
+                - db_host
+                - db_service_name
+                - db_user
+                - db_password
+      responses:
+        '200':
+          description: Success or error message.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    enum: [success, error]
+                  message:
+                    type: string
+              examples:
+                success:
+                  value:
+                    status: success
+                    message: "Connection profile added successfully."
+                error:
+                  value:
+                    status: error
+                    message: "Failed to add connection profile."
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+  /server/connections_handler.php?action=delete:
+    post:
+      summary: Delete an Oracle DB connection profile
+      tags:
+        - Connection Profiles
+      security:
+        - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              properties:
+                conn_id:
+                  type: integer
+                  description: "ID of the connection profile to delete"
+              required:
+                - conn_id
+      responses:
+        '200':
+          description: Success or error message.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StatusResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404': # Or part of 200 with error status
+          description: Profile not found or access denied.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+  /server/connections_handler.php?action=set_active_connection:
+    post:
+      summary: Set the active Oracle DB connection profile for the session
+      tags:
+        - Connection Profiles
+      security:
+        - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              properties:
+                conn_id:
+                  type: integer
+                  description: "ID of the connection profile to set as active"
+              required:
+                - conn_id
+      responses:
+        '200':
+          description: Success or error message, includes selected profile name.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    enum: [success, error]
+                  message:
+                    type: string
+                  selected_profile_name: # Only on success
+                    type: string
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404': # Or part of 200 with error status
+          description: Profile not found or access denied.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+components:
+  securitySchemes:
+    cookieAuth:
+      type: apiKey # Using apiKey type to represent session cookie based auth
+      in: cookie
+      name: PHPSESSID # Default PHP session cookie name, adjust if different
+  schemas:
+    ErrorResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: error
+        message:
+          type: string
+          example: "An error occurred."
+    StatusResponse: # Generic success/error
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [success, error]
+        message:
+          type: string
+  responses:
+    UnauthorizedError:
+      description: Authentication information is missing or invalid.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            status: error
+            message: "Authentication required. Please login."
+    ServerError:
+      description: Server-side error occurred.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            status: error
+            message: "Database service unavailable."
+# Placeholder for /server/results.php endpoints - to be added in next step
+# Example:
+#  /server/results.php?q=performanceratios:
+#    get:
+#      summary: Get key performance ratios
+#      tags:
+#        - Monitoring Data
+#      security:
+#        - cookieAuth: []
+#      responses:
+#        '200':
+#          description: Performance ratios data
+#          # ... more definition needed
+#        '401':
+#          $ref: '#/components/responses/UnauthorizedError'
+#        '503': # If no DB profile selected or Oracle connection fails
+#          $ref: '#/components/responses/ServerError'
+#          # example tailored for this case:
+#          # value:
+  /server/results.php?q=performanceratios:
+    get:
+      summary: Get key Oracle performance ratios
+      tags:
+        - Monitoring Data - Performance Dashboard
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          description: An array of performance ratios.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    RATIO_NAME:
+                      type: string
+                      example: "Buffer Cache Hit Ratio"
+                    RATIO_VALUE:
+                      type: number
+                      format: float
+                      example: 99.85
+                    ERROR_MSG: # Only if an error occurred in PL/SQL
+                      type: string
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '500': # Covers app DB issues, Oracle connection issues, or no profile selected
+          $ref: '#/components/responses/ServerError'
+          examples:
+            no_profile_selected:
+              value:
+                error: "No Oracle database connection profile selected for monitoring. Please select a profile."
+            oracle_connection_failed:
+              value:
+                error: "Oracle Connection Failed: ORA-12541: TNS:no listener"
+                detail_from_oracle_php: true
+
+  /server/results.php?q=sga:
+    get:
+      summary: Get SGA timeseries data for charts
+      tags:
+        - Monitoring Data - SGA
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          description: An array of SGA data points (Time, Used MB, HWM).
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: array
+                  items:
+                    # Mixed types: string for time, number for values
+                    oneOf:
+                      - type: string # For Time
+                      - type: number # For Used MB, HWM
+                  example: ["2023-10-28/10:00:05", 1500.50, 1800.00]
+                  # Note: OpenAPI 3.0 doesn't perfectly describe mixed-type arrays like this for items.
+                  # This is an approximation. A more precise way might be to define items as object with properties.
+                  # For example: { "time": "...", "used_mb": ..., "hwm": ... }
+                  # But current PHP returns an array of arrays of mixed types.
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '500':
+          $ref: '#/components/responses/ServerError'
+          # Examples similar to performanceratios can be added

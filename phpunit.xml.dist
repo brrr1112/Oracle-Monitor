@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/9.5/phpunit.xsd"
+         bootstrap="vendor/autoload.php"
+         colors="true"
+         verbose="true"
+         stopOnFailure="false">
+    <coverage processUncoveredFiles="true">
+        <include>
+            <directory suffix=".php">./server</directory>
+        </include>
+        <exclude>
+            <directory suffix=".php">./server/initialize_app_db.php</directory> <!-- Exclude scripts not meant for direct testing -->
+        </exclude>
+    </coverage>
+    <testsuites>
+        <testsuite name="Unit">
+            <directory suffix="Test.php">./tests/Unit</directory>
+        </testsuite>
+        <testsuite name="Integration">
+            <directory suffix="Test.php">./tests/Integration</directory>
+        </testsuite>
+    </testsuites>
+    <php>
+        <!-- Define environment variables for testing if needed -->
+        <!-- Example: <env name="APP_ENV" value="testing"/> -->
+        <!-- For SQLite in-memory for tests: -->
+        <!-- <env name="DB_CONNECTION" value="sqlite"/> -->
+        <!-- <env name="DB_DATABASE" value=":memory:"/> -->
+
+        <!-- Define ENCRYPTION_KEY for tests.
+             IMPORTANT: Use a DEDICATED, NON-PRODUCTION key for testing.
+             This should ideally be set in phpunit.xml (which is gitignored) or an env var.
+             For this exercise, setting it here for demonstration.
+             DO NOT USE YOUR ACTUAL PRODUCTION KEY HERE.
+        -->
+        <env name="TEST_ENCRYPTION_KEY" value="TestDev_32Byte_EncryptionKey123"/>
+    </php>
+</phpunit>

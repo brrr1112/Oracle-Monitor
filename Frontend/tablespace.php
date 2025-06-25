@@ -45,7 +45,7 @@
                 <th>Total (MB)</th>
                 <th>HWM (MB)</th>
                 <th>Daily_grow (MB)</th>
-                <th>Remaining_Time (MB)</th>
+                 <th>Remaining_Time (Days)</th>
                 </thead>
                 <tbody id="tablebody">
                 </tbody>

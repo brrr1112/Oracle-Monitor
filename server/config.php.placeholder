@@ -1,0 +1,19 @@
+<?php
+// server/config.php.placeholder
+// RENAME THIS FILE to config.php and ensure it is NOT committed to your repository (add to .gitignore).
+// In a production environment, this key MUST be managed securely (e.g., environment variables, AWS Secrets Manager).
+
+// For AES-256-GCM, the key should be 32 bytes long.
+// Generate a secure key using: base64_encode(random_bytes(32))
+// Example: define('ENCRYPTION_KEY', base64_decode('YOUR_GENERATED_BASE64_ENCODED_32_BYTE_KEY_HERE'));
+// Make sure the key you use is EXACTLY 32 bytes after decoding if you are generating it this way.
+// Or simply: define('ENCRYPTION_KEY', 'ThisIsASecretKeyForEncryption123'); // Must be 32 bytes
+// The example key above is NOT 32 bytes and is for illustration. Use a secure one.
+
+define('ENCRYPTION_KEY', 'your-32-byte-secret-encryption-key'); // REPLACE WITH A REAL 32-BYTE KEY
+
+// You can also define other configuration variables here if needed.
+// define('APP_ENV', 'development'); // 'production', 'development'
+
+// Ensure this file is included only once using require_once.
+?>

@@ -14,51 +14,66 @@
         <div class="form">
             <img class="imagen" src="img/logo.png">
             <!--<h2>Sign in </h2>-->
-            <form action="../server/Oracle.php" method="POST">
+
+            <div id="errorMessage" style="color: red; text-align: center; margin-bottom: 15px;">
+                <!-- Error messages will be displayed here -->
+            </div>
+
+            <form action="../server/app_login_handler.php" method="POST">
 
                 <div class="inputbox">
-                    <input type="text" required="required" name="user">
-                    <span>Username</span>
+                    <input type="text" required="required" name="username" autocomplete="username">
+                    <span>Application Username</span>
                     <i></i>
                 </div>
 
                 <div class="inputbox">
-                    <input type="password" required="required" name="pass">
-                    <span>Password</span>
+                    <input type="password" required="required" name="password" autocomplete="current-password">
+                    <span>Application Password</span>
                     <i></i>
                 </div>
 
-                <div class="inputbox">
-                    <div class="server-banner">
-                        <label>Server:</label>
-                        <select id="servers" name="server" class="dropdown-list">
-                            <option selected="selected" disabled>Choose a server</option>
-                        </select>
-                        <input type="hidden">
-                        <i></i>
-                    </div>
+                <div class="links">
+                    <a href="register.php">Create an Account</a>
                 </div>
 
-                <div class="inputbox">
-                    <input type="text" name="port">
-                    <span>Port</span>
-                    <i></i>
-                </div>
-
-                <div class="inputbox">
-                    <input type="text" required="required" name="db">
-                    <span>Database Name</span>
-                    <i></i>
-                </div>
-
-                <div class="button">
-                    <!--<input type="submit" value:="Login"/>-->
-                    <a href="menu.html"></a>
-                    <button class="boton">Login</button>
+                <div class="button" style="text-align: center;">
+                    <button type="submit" class="boton">Login</button>
                 </div>
             </form>
         </div>
     </div>
+    <script type="text/javascript">
+        document.addEventListener('DOMContentLoaded', function() {
+            const params = new URLSearchParams(window.location.search);
+            const message = params.get('message'); // Changed from 'error' to 'message' for consistency
+            const type = params.get('type');
+
+            if (message) {
+                const messageArea = document.getElementById('errorMessage'); // Reusing this div
+                if (messageArea) {
+                    messageArea.textContent = decodeURIComponent(message);
+                    messageArea.className = type === 'success' ? 'success' : (type === 'error' ? 'error' : '');
+                    if (type === 'success') {
+                        messageArea.style.color = 'green'; // Basic styling for success
+                        messageArea.style.backgroundColor = '#d4edda';
+                         messageArea.style.border = '1px solid #c3e6cb';
+                    } else {
+                         messageArea.style.color = 'red';
+                         messageArea.style.backgroundColor = '#f8d7da';
+                         messageArea.style.border = '1px solid #f5c6cb';
+                    }
+                    messageArea.style.padding = '10px'; // Ensure padding
+                    messageArea.style.display = 'block';
+                }
+                // Clean URL
+                if (window.history.replaceState) {
+                    const cleanUrl = window.location.protocol + "//" + window.location.host + window.location.pathname;
+                    window.history.replaceState({ path: cleanUrl }, '', cleanUrl);
+                }
+            }
+        });
+    </script>
 </body>
 
 
