@@ -137,6 +137,47 @@ switch ($action) {
     //     // Similar logic to add, but with UPDATE statement and conn_id
     //     break;
 
+    case 'set_active_connection':
+        if ($_SERVER["REQUEST_METHOD"] == "POST") {
+            $conn_id = $_POST['conn_id'] ?? null;
+
+            if (empty($conn_id) || !is_numeric($conn_id)) {
+                echo json_encode(['status' => 'error', 'message' => 'Invalid connection ID provided.']);
+                exit();
+            }
+
+            try {
+                // Verify this conn_id belongs to the logged-in user and get its name
+                $stmt = $pdo->prepare(
+                    "SELECT profile_name
+                     FROM database_connections
+                     WHERE conn_id = :conn_id AND user_id = :user_id"
+                );
+                $stmt->bindParam(':conn_id', $conn_id, PDO::PARAM_INT);
+                $stmt->bindParam(':user_id', $app_user_id, PDO::PARAM_INT);
+                $stmt->execute();
+                $profile = $stmt->fetch(PDO::FETCH_ASSOC);
+
+                if ($profile) {
+                    $_SESSION['selected_oracle_conn_id'] = (int)$conn_id;
+                    $_SESSION['selected_oracle_profile_name'] = $profile['profile_name'];
+                    echo json_encode([
+                        'status' => 'success',
+                        'message' => 'Active Oracle DB connection set to: ' . htmlspecialchars($profile['profile_name']),
+                        'selected_profile_name' => htmlspecialchars($profile['profile_name'])
+                    ]);
+                } else {
+                    echo json_encode(['status' => 'error', 'message' => 'Connection profile not found or access denied.']);
+                }
+            } catch (PDOException $e) {
+                error_log("PDOException on set_active_connection for user_id: {$app_user_id}, conn_id: {$conn_id} - " . $e->getMessage());
+                echo json_encode(['status' => 'error', 'message' => 'Database error while setting active connection.']);
+            }
+        } else {
+            echo json_encode(['status' => 'error', 'message' => 'Invalid request method for set_active_connection.']);
+        }
+        break;
+
     default:
         echo json_encode(['status' => 'error', 'message' => 'Invalid action specified.']);
         break;
