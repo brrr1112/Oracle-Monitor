@@ -1,9 +1,41 @@
 <?php
 
+if (session_status() == PHP_SESSION_NONE) {
+    session_start();
+}
 header('Content-Type: application/json');
-include_once('oracle.php');
 
-$HWM = 0.95;
+// Essential: Check for application user login and selected Oracle DB profile
+if (!isset($_SESSION['app_user_id'])) {
+    echo json_encode(['error' => 'Application authentication required. Please login to the monitoring tool.']);
+    exit;
+}
+// This 'selected_oracle_conn_id' will be set by the UI in Phase 4.
+// For now, to allow testing of results.php structure, we might need a placeholder or default if not set.
+// However, in a live system, this MUST be set by user action.
+if (!isset($_SESSION['selected_oracle_conn_id'])) {
+    echo json_encode(['error' => 'No Oracle database connection profile selected for monitoring. Please select a profile.']);
+    exit;
+}
+
+require_once __DIR__ . '/oracle.php'; // Makes establish_oracle_connection() available
+
+$app_user_id = $_SESSION['app_user_id'];
+$selected_oracle_conn_id = $_SESSION['selected_oracle_conn_id'];
+
+$conn = establish_oracle_connection($app_user_id, $selected_oracle_conn_id);
+
+if (!$conn) {
+    // establish_oracle_connection sets a session error message.
+    $error_message = $_SESSION['oracle_connection_error'] ?? 'Failed to connect to the selected Oracle database. Please check profile settings or database status.';
+    unset($_SESSION['oracle_connection_error']); // Clear it after displaying
+    echo json_encode(['error' => $error_message, 'detail_from_oracle_php' => true]);
+    exit;
+}
+
+// If connection is successful, proceed with existing logic using $conn
+
+$HWM_percentage = 0.95; // Renamed from HWM for clarity, as used in previous steps
 
 function setTimeFormat($conn)
 {
