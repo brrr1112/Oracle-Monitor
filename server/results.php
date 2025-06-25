@@ -232,7 +232,7 @@ function getTSBarInfo($conn, $HWM)
   echo $var;
 }
 
-function getTSAllInfo($conn, $HWM){
+function getTSAllInfo($conn, $HWM_percentage){ // Renamed $HWM to $HWM_percentage for clarity
   $query = oci_parse($conn, 'begin :cursor := sys.fun_get_TS_allInfo; end;');
   $p_cursor = oci_new_cursor($conn);
 
@@ -246,16 +246,16 @@ function getTSAllInfo($conn, $HWM){
     while ($r = oci_fetch_array($p_cursor, OCI_ASSOC + OCI_RETURN_NULLS)) {
       $temp = array();
       $temp[] = (string) $r['NAME'];
-      $used = $temp[] = (float) $r['USED(Mb)'];
-      $free = $temp[] = (float) $r['FREE(Mb)'];
-      $tot = $temp[] = (float) $r['TOTAL(Mb)'];
-      //HWM
-      $temp[] = $tot*$HWM;
-      $days = (int) $r['DAYS_CREATED'];
-      //DAILY GROW
-      $dw = $temp[] = round($used/$days,2);
-      //REMAINING_TIME
-      $temp[] = round($free/$dw,2);
+      // Use ACTUAL_USED_MB for "Used (MB)" column as it's more representative of data volume
+      $temp[] = (float) $r['ACTUAL_USED_MB'];
+      $temp[] = (float) $r['FREE_MB'];
+      $total_mb = (float) $r['TOTAL_MB']; // This is effective total
+      $temp[] = $total_mb;
+      // HWM calculated as a percentage of the total effective size
+      $temp[] = round($total_mb * $HWM_percentage, 2);
+      $temp[] = (float) $r['DAILY_GROWTH_MB'];
+      $temp[] = (int) $r['REMAINING_TIME_DAYS']; // This is now in days
+      // $temp[] = (string) $r['USED_MB']; // Original allocated space, could be added as an extra column if needed
       $tsinfo[] = $temp;
     }
     oci_free_statement($query);
@@ -367,6 +367,22 @@ switch ($_GET['q']) {
 
   case 'logmode':
     getLogMode($conn);
+    break;
+
+  case 'rmanjobs':
+    $curs = oci_new_cursor($conn);
+    // Ensure the PL/SQL function name matches what was created in Script.sql
+    $stid = oci_parse($conn, "begin :curs := fun_get_rman_backup_jobs(); end;");
+    oci_bind_by_name($stid, ":curs", $curs, -1, OCI_B_CURSOR);
+    oci_execute($stid);
+    oci_execute($curs);
+    $data = array();
+    while (($row = oci_fetch_array($curs, OCI_ASSOC+OCI_RETURN_NULLS)) != false) {
+        $data[] = $row;
+    }
+    oci_free_statement($stid);
+    oci_free_statement($curs);
+    echo json_encode($data);
     break;
 
   oci_close($conn);

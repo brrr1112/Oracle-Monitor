@@ -151,15 +151,53 @@ CREATE OR REPLACE FUNCTION fun_get_TS_allinfo RETURN SYS_REFCURSOR IS
   cr SYS_REFCURSOR;
 BEGIN
     OPEN cr FOR
-        SELECT df.tablespace_name "NAME",
-            ROUND(df.bytes/(1024*1023),2) "USED(Mb)",
-            ROUND(df.maxbytes/(1024*1023),2) "TOTAL(Mb)",
-            ROUND((df.maxbytes - df.bytes)/(1024*1023),2) "FREE(Mb)",
-            ROUND(SYSDATE - d.creation_time,0) "DAYS_CREATED"
-        FROM Dba_data_files df, v$datafile d
-        WHERE df.file_name = d.name;
+        WITH ts_sizes AS (
+            SELECT
+                df.tablespace_name,
+                SUM(df.bytes) as used_bytes,
+                SUM(df.maxbytes) as total_bytes, -- maxbytes can be 0 if autoextend is off for a file but generally refers to potential size
+                SUM(CASE WHEN df.autoextensible = 'YES' THEN df.maxbytes ELSE df.bytes END) as effective_total_bytes, -- A more realistic total considering autoextend
+                MIN(d.creation_time) as creation_time -- Earliest creation time for any file in the tablespace
+            FROM
+                dba_data_files df
+            JOIN
+                v$datafile d ON df.file_id = d.file# -- Joining by file_id/file#
+            GROUP BY
+                df.tablespace_name
+        ),
+        ts_free_space AS (
+            SELECT
+                tablespace_name,
+                SUM(bytes) as free_bytes
+            FROM
+                dba_free_space
+            GROUP BY
+                tablespace_name
+        )
+        SELECT
+            s.tablespace_name "NAME",
+            ROUND(s.used_bytes / (1024*1024), 2) "USED_MB",
+            ROUND((s.used_bytes - NVL(f.free_bytes, 0)) / (1024*1024), 2) "ACTUAL_USED_MB", -- Used space minus free fragments = actual data
+            ROUND(NVL(f.free_bytes, 0) / (1024*1024), 2) "FREE_MB",
+            ROUND(s.effective_total_bytes / (1024*1024), 2) "TOTAL_MB", -- Using effective_total_bytes
+            GREATEST(1, ROUND(SYSDATE - s.creation_time, 0)) "DAYS_CREATED", -- Ensure days_created is at least 1 to avoid division by zero later
+            ROUND( ( (s.used_bytes - NVL(f.free_bytes, 0)) / (1024*1024) ) / GREATEST(1, ROUND(SYSDATE - s.creation_time, 0)), 2) "DAILY_GROWTH_MB", -- Growth based on actual used space
+            CASE
+                WHEN ROUND( ( (s.used_bytes - NVL(f.free_bytes, 0)) / (1024*1024) ) / GREATEST(1, ROUND(SYSDATE - s.creation_time, 0)), 2) <= 0 THEN 9999 -- If no growth or negative growth, remaining time is effectively infinite (or very large)
+                ELSE ROUND( (NVL(f.free_bytes, 0) / (1024*1024)) / (ROUND( ( (s.used_bytes - NVL(f.free_bytes, 0)) / (1024*1024) ) / GREATEST(1, ROUND(SYSDATE - s.creation_time, 0)), 2)), 0)
+            END "REMAINING_TIME_DAYS"
+        FROM
+            ts_sizes s
+        LEFT JOIN
+            ts_free_space f ON s.tablespace_name = f.tablespace_name
+        ORDER BY
+            s.tablespace_name;
     RETURN cr;
-END;
+    EXCEPTION
+        WHEN OTHERS THEN
+            -- Consider logging the error: DBMS_OUTPUT.PUT_LINE(SQLERRM);
+            RETURN NULL; -- Or raise the exception
+END fun_get_TS_allinfo;
 /
 SHOW ERROR
 
@@ -328,3 +366,160 @@ CREATE OR REPLACE FUNCTION fun_get_logSwitchMinutesAvg
 
 --Prueba de la funcion
 select  switch_minutes_avg from dual;
+
+
+                        /*
+                        RMAN SECTION
+                        */
+
+CREATE OR REPLACE FUNCTION fun_get_rman_backup_jobs RETURN SYS_REFCURSOR IS
+  cr SYS_REFCURSOR;
+BEGIN
+    OPEN cr FOR
+        SELECT
+            SESSION_KEY,
+            INPUT_TYPE,
+            STATUS,
+            TO_CHAR(START_TIME, 'YYYY-MM-DD HH24:MI:SS') AS START_TIME_STR,
+            TO_CHAR(END_TIME, 'YYYY-MM-DD HH24:MI:SS') AS END_TIME_STR,
+            INPUT_BYTES_DISPLAY,
+            OUTPUT_BYTES_DISPLAY,
+            ELAPSED_SECONDS,
+            COMPRESSION_RATIO
+        FROM
+            V$RMAN_BACKUP_JOB_DETAILS
+        ORDER BY
+            START_TIME DESC;
+    RETURN cr;
+    EXCEPTION
+        WHEN NO_DATA_FOUND THEN
+            -- Return an empty cursor or handle as appropriate
+            -- For now, returning NULL, but frontend should handle this gracefully
+            RETURN NULL;
+        WHEN OTHERS THEN
+            -- Log error or raise notice, then return NULL
+            -- DBMS_OUTPUT.PUT_LINE('Error in fun_get_rman_backup_jobs: ' || SQLERRM);
+            RETURN NULL;
+END fun_get_rman_backup_jobs;
+/
+SHOW ERROR;
+
+CREATE OR REPLACE PROCEDURE PROC_START_RMAN_FULL_BACKUP (
+    p_backup_path IN VARCHAR2,
+    p_file_name_prefix IN VARCHAR2,
+    p_include_controlfile IN BOOLEAN DEFAULT FALSE,
+    p_include_archivelogs IN BOOLEAN DEFAULT FALSE,
+    p_catalog_user IN VARCHAR2 DEFAULT NULL,
+    p_catalog_password IN VARCHAR2 DEFAULT NULL,
+    o_rman_script OUT CLOB,
+    o_status OUT VARCHAR2,
+    o_message OUT VARCHAR2
+) AS
+    v_rman_script CLOB;
+    v_backup_format VARCHAR2(1000);
+    v_connect_string VARCHAR2(200);
+    v_backup_command VARCHAR2(2000);
+BEGIN
+    -- Basic validation for path and prefix (more robust validation can be added)
+    IF p_backup_path IS NULL OR LENGTH(TRIM(p_backup_path)) = 0 OR
+       p_file_name_prefix IS NULL OR LENGTH(TRIM(p_file_name_prefix)) = 0 THEN
+        o_status := 'ERROR';
+        o_message := 'Backup path and file name prefix must be provided.';
+        RETURN;
+    END IF;
+
+    -- Construct backup format string
+    v_backup_format := p_backup_path || '/%U_' || p_file_name_prefix || '.bak'; -- Adjusted for typical directory structure
+
+    -- Construct connect string (optional catalog)
+    v_connect_string := 'CONNECT TARGET /;' || CHR(10);
+    IF p_catalog_user IS NOT NULL AND p_catalog_password IS NOT NULL THEN
+        v_connect_string := v_connect_string || 'CONNECT CATALOG ' || DBMS_ASSERT.SIMPLE_SQL_NAME(p_catalog_user) || '/' || DBMS_ASSERT.ENQUOTE_LITERAL(p_catalog_password) || ';' || CHR(10);
+    END IF;
+
+    -- Construct backup command
+    v_backup_command := 'BACKUP DATABASE';
+    IF p_include_controlfile THEN
+        v_backup_command := v_backup_command || ' INCLUDE CURRENT CONTROLFILE';
+    END IF;
+    IF p_include_archivelogs THEN
+        v_backup_command := v_backup_command || ' PLUS ARCHIVELOG';
+    END IF;
+    v_backup_command := v_backup_command || ';';
+
+    -- Assemble the RMAN script
+    v_rman_script := v_connect_string ||
+                     'RUN {' || CHR(10) ||
+                     '  ALLOCATE CHANNEL ch1 DEVICE TYPE DISK FORMAT ''' || v_backup_format || ''';' || CHR(10) ||
+                     '  ' || v_backup_command || CHR(10) ||
+                     '  RELEASE CHANNEL ch1;' || CHR(10) ||
+                     '}';
+
+    o_rman_script := v_rman_script;
+    o_status := 'SUCCESS';
+    o_message := 'RMAN script generated. Execute this script via DBMS_SCHEDULER or a secure external process.';
+
+EXCEPTION
+    WHEN OTHERS THEN
+        o_status := 'ERROR';
+        o_message := 'Error generating RMAN script: ' || SQLERRM;
+        o_rman_script := NULL;
+END PROC_START_RMAN_FULL_BACKUP;
+/
+SHOW ERROR;
+
+CREATE OR REPLACE PROCEDURE PROC_START_RMAN_TS_BACKUP (
+    p_tablespace_name IN VARCHAR2,
+    p_backup_path IN VARCHAR2,
+    p_file_name_prefix IN VARCHAR2,
+    p_catalog_user IN VARCHAR2 DEFAULT NULL,
+    p_catalog_password IN VARCHAR2 DEFAULT NULL,
+    o_rman_script OUT CLOB,
+    o_status OUT VARCHAR2,
+    o_message OUT VARCHAR2
+) AS
+    v_rman_script CLOB;
+    v_backup_format VARCHAR2(1000);
+    v_connect_string VARCHAR2(200);
+BEGIN
+    -- Basic validation
+    IF p_tablespace_name IS NULL OR LENGTH(TRIM(p_tablespace_name)) = 0 OR
+       p_backup_path IS NULL OR LENGTH(TRIM(p_backup_path)) = 0 OR
+       p_file_name_prefix IS NULL OR LENGTH(TRIM(p_file_name_prefix)) = 0 THEN
+        o_status := 'ERROR';
+        o_message := 'Tablespace name, backup path, and file name prefix must be provided.';
+        RETURN;
+    END IF;
+
+    v_backup_format := p_backup_path || '/%U_' || p_file_name_prefix || '_' || DBMS_ASSERT.SIMPLE_SQL_NAME(p_tablespace_name) || '.bak';
+
+    v_connect_string := 'CONNECT TARGET /;' || CHR(10);
+    IF p_catalog_user IS NOT NULL AND p_catalog_password IS NOT NULL THEN
+        v_connect_string := v_connect_string || 'CONNECT CATALOG ' || DBMS_ASSERT.SIMPLE_SQL_NAME(p_catalog_user) || '/' || DBMS_ASSERT.ENQUOTE_LITERAL(p_catalog_password) || ';' || CHR(10);
+    END IF;
+
+    v_rman_script := v_connect_string ||
+                     'RUN {' || CHR(10) ||
+                     '  ALLOCATE CHANNEL ch1 DEVICE TYPE DISK FORMAT ''' || v_backup_format || ''';' || CHR(10) ||
+                     '  BACKUP TABLESPACE ' || DBMS_ASSERT.SIMPLE_SQL_NAME(p_tablespace_name) || ';' || CHR(10) ||
+                     '  RELEASE CHANNEL ch1;' || CHR(10) ||
+                     '}';
+
+    o_rman_script := v_rman_script;
+    o_status := 'SUCCESS';
+    o_message := 'RMAN script for tablespace generated. Execute this script via DBMS_SCHEDULER or a secure external process.';
+
+EXCEPTION
+    WHEN OTHERS THEN
+        o_status := 'ERROR';
+        o_message := 'Error generating RMAN tablespace script: ' || SQLERRM;
+        o_rman_script := NULL;
+END PROC_START_RMAN_TS_BACKUP;
+/
+SHOW ERROR;
+
+-- Note: For actual execution, DBMS_SCHEDULER.CREATE_JOB with job_type 'EXECUTABLE'
+-- and job_action pointing to a shell script that runs rman cmdfile=<script_file>
+-- would be a more secure way than direct exec from PHP.
+-- These procedures currently generate the script, which PHP will then save and execute.
+-- A further refinement would be for these PL/SQL procedures to directly submit the job to DBMS_SCHEDULER.
