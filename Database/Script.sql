@@ -523,3 +523,135 @@ SHOW ERROR;
 -- would be a more secure way than direct exec from PHP.
 -- These procedures currently generate the script, which PHP will then save and execute.
 -- A further refinement would be for these PL/SQL procedures to directly submit the job to DBMS_SCHEDULER.
+
+
+                        /*
+                        TOP N SQL Monitoring SECTION
+                        */
+CREATE OR REPLACE FUNCTION fun_get_top_sql (
+    p_metric IN VARCHAR2 DEFAULT 'CPU_TIME', -- CPU_TIME, ELAPSED_TIME, BUFFER_GETS, DISK_READS, EXECUTIONS
+    p_top_n IN NUMBER DEFAULT 10
+) RETURN SYS_REFCURSOR IS
+    cr SYS_REFCURSOR;
+    v_sql CLOB;
+    v_order_by_clause VARCHAR2(100);
+BEGIN
+    -- Validate and sanitize p_metric to prevent SQL injection
+    CASE UPPER(p_metric)
+        WHEN 'CPU_TIME' THEN v_order_by_clause := 'CPU_TIME DESC';
+        WHEN 'ELAPSED_TIME' THEN v_order_by_clause := 'ELAPSED_TIME DESC';
+        WHEN 'BUFFER_GETS' THEN v_order_by_clause := 'BUFFER_GETS DESC';
+        WHEN 'DISK_READS' THEN v_order_by_clause := 'DISK_READS DESC';
+        WHEN 'EXECUTIONS' THEN v_order_by_clause := 'EXECUTIONS DESC';
+        ELSE v_order_by_clause := 'CPU_TIME DESC'; -- Default ordering
+    END CASE;
+
+    v_sql := 'SELECT * FROM (
+                SELECT
+                    SQL_ID,
+                    SUBSTR(SQL_TEXT, 1, 200) as SQL_TEXT_SNIPPET,
+                    EXECUTIONS,
+                    ROUND(CPU_TIME / 1000000, 2) as CPU_TIME_SEC,
+                    ROUND(ELAPSED_TIME / 1000000, 2) as ELAPSED_TIME_SEC,
+                    BUFFER_GETS,
+                    DISK_READS,
+                    PARSING_USER_ID,
+                    (SELECT USERNAME FROM ALL_USERS WHERE USER_ID = PARSING_USER_ID) as PARSING_USERNAME,
+                    PLAN_HASH_VALUE,
+                    LAST_ACTIVE_TIME
+                FROM
+                    V$SQLSTATS
+                ORDER BY ' || v_order_by_clause || ' NULLS LAST
+              )
+              WHERE ROWNUM <= :top_n';
+
+    OPEN cr FOR v_sql USING p_top_n;
+    RETURN cr;
+EXCEPTION
+    WHEN OTHERS THEN
+        -- Consider logging: DBMS_OUTPUT.PUT_LINE('Error in fun_get_top_sql: ' || SQLERRM);
+        RETURN NULL;
+END fun_get_top_sql;
+/
+SHOW ERROR;
+
+
+                        /*
+                        Session Monitoring SECTION
+                        */
+CREATE OR REPLACE FUNCTION fun_get_active_sessions
+RETURN SYS_REFCURSOR IS
+    cr SYS_REFCURSOR;
+BEGIN
+    OPEN cr FOR
+        SELECT
+            s.SID,
+            s.SERIAL#,
+            s.USERNAME,
+            s.STATUS,
+            s.OSUSER,
+            s.MACHINE,
+            s.PROGRAM,
+            TO_CHAR(s.LOGON_TIME, 'YYYY-MM-DD HH24:MI:SS') as LOGON_TIME_STR,
+            s.LAST_CALL_ET, -- Seconds since last call became active (or last call ended for INACTIVE)
+            s.SQL_ID,
+            s.SQL_ADDRESS,
+            s.PREV_SQL_ID, -- Previous SQL ID
+            s.MODULE,
+            s.ACTION,
+            s.CLIENT_INFO,
+            p.SPID as SERVER_PROCESS_ID, -- Server process ID
+            s.RESOURCE_CONSUMER_GROUP
+        FROM
+            V$SESSION s
+        LEFT JOIN
+            V$PROCESS p ON s.PADDR = p.ADDR
+        WHERE
+            s.USERNAME IS NOT NULL -- Exclude background processes not associated with a user
+            AND s.STATUS = 'ACTIVE' -- Initially focus on ACTIVE sessions, can be made parameterizable later
+        ORDER BY
+            s.LOGON_TIME DESC;
+    RETURN cr;
+EXCEPTION
+    WHEN OTHERS THEN
+        -- Consider logging: DBMS_OUTPUT.PUT_LINE('Error in fun_get_active_sessions: ' || SQLERRM);
+        RETURN NULL;
+END fun_get_active_sessions;
+/
+SHOW ERROR;
+
+
+                        /*
+                        System-Wide Wait Event Monitoring SECTION
+                        */
+CREATE OR REPLACE FUNCTION fun_get_system_wait_summary (
+    p_top_n IN NUMBER DEFAULT 10
+)
+RETURN SYS_REFCURSOR IS
+    cr SYS_REFCURSOR;
+BEGIN
+    OPEN cr FOR
+        SELECT * FROM (
+            SELECT
+                EVENT,
+                TOTAL_WAITS,
+                TOTAL_TIMEOUTS,
+                ROUND(TIME_WAITED_MICRO / 1000000, 2) AS TIME_WAITED_SECONDS,
+                ROUND(AVERAGE_WAIT_MICRO / 1000000, 2) AS AVERAGE_WAIT_SECONDS,
+                WAIT_CLASS
+            FROM
+                V$SYSTEM_EVENT
+            WHERE
+                WAIT_CLASS <> 'Idle' -- Exclude common idle events
+            ORDER BY
+                TIME_WAITED_MICRO DESC
+        )
+        WHERE ROWNUM <= p_top_n;
+    RETURN cr;
+EXCEPTION
+    WHEN OTHERS THEN
+        -- Consider logging: DBMS_OUTPUT.PUT_LINE('Error in fun_get_system_wait_summary: ' || SQLERRM);
+        RETURN NULL;
+END fun_get_system_wait_summary;
+/
+SHOW ERROR;

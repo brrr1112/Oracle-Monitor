@@ -387,3 +387,184 @@ switch ($_GET['q']) {
 
   oci_close($conn);
 }
+
+/*
+TOP N SQL Monitoring
+*/
+function getTopNSQL($conn) {
+    $metric = isset($_GET['metric']) ? strtoupper($_GET['metric']) : 'CPU_TIME';
+    $top_n = isset($_GET['top_n']) ? intval($_GET['top_n']) : 10;
+
+    // Basic validation for top_n to ensure it's a reasonable positive integer
+    if ($top_n <= 0 || $top_n > 100) { // Cap at 100 for sanity
+        $top_n = 10;
+    }
+
+    // Metric validation is handled by the PL/SQL function's CASE statement
+
+    $curs = oci_new_cursor($conn);
+    $stid = oci_parse($conn, "begin :curs := fun_get_top_sql(:p_metric, :p_top_n); end;");
+    oci_bind_by_name($stid, ":p_metric", $metric);
+    oci_bind_by_name($stid, ":p_top_n", $top_n);
+    oci_bind_by_name($stid, ":curs", $curs, -1, OCI_B_CURSOR);
+
+    oci_execute($stid);
+    oci_execute($curs);
+
+    $data = array();
+    while (($row = oci_fetch_array($curs, OCI_ASSOC+OCI_RETURN_NULLS)) != false) {
+        // Ensure SQL_TEXT_SNIPPET is properly handled if it's a LOB or long string
+        if (is_object($row['SQL_TEXT_SNIPPET'])) { // Check if it's a LOB object
+            $row['SQL_TEXT_SNIPPET'] = $row['SQL_TEXT_SNIPPET']->load();
+        }
+        $data[] = $row;
+    }
+
+    oci_free_statement($stid);
+    oci_free_statement($curs);
+    echo json_encode($data);
+}
+
+/*
+System-Wide Wait Event Monitoring
+*/
+function getSystemWaitSummary($conn) {
+    $top_n = isset($_GET['top_n']) ? intval($_GET['top_n']) : 10;
+    // Basic validation for top_n
+    if ($top_n <= 0 || $top_n > 50) { // Cap at 50 for sanity
+        $top_n = 10;
+    }
+
+    $curs = oci_new_cursor($conn);
+    $stid = oci_parse($conn, "begin :curs := fun_get_system_wait_summary(:p_top_n); end;");
+    oci_bind_by_name($stid, ":p_top_n", $top_n);
+    oci_bind_by_name($stid, ":curs", $curs, -1, OCI_B_CURSOR);
+
+    oci_execute($stid);
+    oci_execute($curs);
+
+    $data = array();
+    while (($row = oci_fetch_array($curs, OCI_ASSOC+OCI_RETURN_NULLS)) != false) {
+        $data[] = $row;
+    }
+
+    oci_free_statement($stid);
+    oci_free_statement($curs);
+    echo json_encode($data);
+}
+
+//CONTROLLERR
+switch ($_GET['q']) {
+    /*
+  USER SQL
+  */
+  case 'usernames':
+    getUsernames($conn);
+    break;
+
+  case 'usersql':
+    getUsersSQL($conn);
+    break;
+    /*
+  SGA
+  */
+  case 'sga':
+    getSGATable($conn, $HWM_percentage);
+    break;
+
+  case 'sgasize':
+    getSGAMaxSize($conn);
+    break;
+  case 'sgastatus':
+    isSGAGreatherHWM($conn, $HWM_percentage);
+    break;
+  case 'sgaalerts':
+    getSGAAlerts($conn);
+    break;
+    /*
+  TABLESPACE
+  */
+  case 'tspie':
+    getTSPieInfo($conn);
+    break;
+
+  case 'tsnames':
+    getTablespaceNames($conn);
+    break;
+
+  case 'tsbar':
+    getTSBarInfo($conn, $HWM_percentage);
+    break;
+  case 'tsinfo':
+    getTSAllInfo($conn, $HWM_percentage);
+    break;
+    /*
+  LOGS
+  */
+  case 'logsinfo':
+    getLogsInfo($conn);
+    break;
+
+  case 'logsswitch':
+    getSwitchMinutes($conn);
+    break;
+
+  case 'logmode':
+    getLogMode($conn);
+    break;
+
+  case 'rmanjobs':
+    $curs = oci_new_cursor($conn);
+    // Ensure the PL/SQL function name matches what was created in Script.sql
+    $stid = oci_parse($conn, "begin :curs := fun_get_rman_backup_jobs(); end;");
+    oci_bind_by_name($stid, ":curs", $curs, -1, OCI_B_CURSOR);
+    oci_execute($stid);
+    oci_execute($curs);
+    $data = array();
+    while (($row = oci_fetch_array($curs, OCI_ASSOC+OCI_RETURN_NULLS)) != false) {
+        $data[] = $row;
+    }
+    oci_free_statement($stid);
+    oci_free_statement($curs);
+    echo json_encode($data);
+    break;
+
+  /*
+  NEWLY ADDED
+  */
+  case 'topnsql':
+    getTopNSQL($conn);
+    break;
+
+  case 'activesessions':
+    getActiveSessions($conn);
+    break;
+
+  case 'systemwaits':
+    getSystemWaitSummary($conn);
+    break;
+
+  oci_close($conn);
+}
+
+/*
+Session Monitoring
+*/
+function getActiveSessions($conn) {
+    $curs = oci_new_cursor($conn);
+    // For now, calling without parameters. Can be extended later if the PL/SQL func takes params (e.g. for status)
+    $stid = oci_parse($conn, "begin :curs := fun_get_active_sessions(); end;");
+    oci_bind_by_name($stid, ":curs", $curs, -1, OCI_B_CURSOR);
+
+    oci_execute($stid);
+    oci_execute($curs);
+
+    $data = array();
+    while (($row = oci_fetch_array($curs, OCI_ASSOC+OCI_RETURN_NULLS)) != false) {
+        $data[] = $row;
+    }
+
+    oci_free_statement($stid);
+    oci_free_statement($curs);
+    echo json_encode($data);
+}
