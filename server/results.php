@@ -453,6 +453,90 @@ function getSystemWaitSummary($conn) {
     echo json_encode($data);
 }
 
+/*
+Performance Dashboard PHP Functions
+*/
+
+function getPerformanceRatios($conn) {
+    $curs = oci_new_cursor($conn);
+    $stid = oci_parse($conn, "begin :curs := fun_get_performance_ratios(); end;");
+    oci_bind_by_name($stid, ":curs", $curs, -1, OCI_B_CURSOR);
+    oci_execute($stid);
+    oci_execute($curs);
+    $data = array();
+    while (($row = oci_fetch_array($curs, OCI_ASSOC+OCI_RETURN_NULLS)) != false) {
+        $data[] = $row;
+    }
+    oci_free_statement($stid);
+    oci_free_statement($curs);
+    echo json_encode($data);
+}
+
+function getCallRates($conn) {
+    $curs = oci_new_cursor($conn);
+    $stid = oci_parse($conn, "begin :curs := fun_get_call_rates(); end;");
+    oci_bind_by_name($stid, ":curs", $curs, -1, OCI_B_CURSOR);
+    oci_execute($stid);
+    oci_execute($curs);
+    $data = array(); // Expecting a single row
+    if (($row = oci_fetch_array($curs, OCI_ASSOC+OCI_RETURN_NULLS)) != false) {
+        // Convert SYSTIMESTAMP to a more JS-friendly format if needed, or ensure PL/SQL does.
+        // Here, assuming CURRENT_DB_TIME is a string representation from Oracle that JS can parse or use.
+        // If it's an OCI-Lob object for timestamp, it would need ->load()
+         if (isset($row['CURRENT_DB_TIME']) && is_object($row['CURRENT_DB_TIME'])) {
+             $row['CURRENT_DB_TIME'] = $row['CURRENT_DB_TIME']->load();
+         }
+        $data = $row;
+    }
+    oci_free_statement($stid);
+    oci_free_statement($curs);
+    echo json_encode($data);
+}
+
+function getTopSessionsByResource($conn) {
+    $resource_metric = isset($_GET['resource_metric']) ? $_GET['resource_metric'] : 'CPU used by this session';
+    $top_n = isset($_GET['top_n']) ? intval($_GET['top_n']) : 5;
+
+    if ($top_n <= 0 || $top_n > 50) { // Cap for sanity
+        $top_n = 5;
+    }
+    // Basic sanitization/validation for resource_metric can be added here if needed,
+    // though the PL/SQL uses it in a WHERE clause which is safer than dynamic SQL column names.
+    // Example: Check against a list of allowed metrics.
+    $allowed_metrics = [
+        'CPU used by this session',
+        'session logical reads',
+        'physical reads',
+        'physical reads direct',
+        'execute count',
+        'parse count (total)'
+    ];
+    if (!in_array($resource_metric, $allowed_metrics)) {
+        // Fallback to a default or return an error
+        $resource_metric = 'CPU used by this session';
+        // Alternatively: echo json_encode(['error' => 'Invalid resource metric specified.']); return;
+    }
+
+
+    $curs = oci_new_cursor($conn);
+    $stid = oci_parse($conn, "begin :curs := fun_get_top_sessions_by_resource(:p_resource_metric_name, :p_top_n); end;");
+    oci_bind_by_name($stid, ":p_resource_metric_name", $resource_metric);
+    oci_bind_by_name($stid, ":p_top_n", $top_n);
+    oci_bind_by_name($stid, ":curs", $curs, -1, OCI_B_CURSOR);
+
+    oci_execute($stid);
+    oci_execute($curs);
+
+    $data = array();
+    while (($row = oci_fetch_array($curs, OCI_ASSOC+OCI_RETURN_NULLS)) != false) {
+        $data[] = $row;
+    }
+    oci_free_statement($stid);
+    oci_free_statement($curs);
+    echo json_encode($data);
+}
+
+
 //CONTROLLERR
 switch ($_GET['q']) {
     /*
@@ -542,6 +626,17 @@ switch ($_GET['q']) {
 
   case 'systemwaits':
     getSystemWaitSummary($conn);
+    break;
+
+  // Performance Dashboard endpoints
+  case 'performanceratios':
+    getPerformanceRatios($conn);
+    break;
+  case 'callrates':
+    getCallRates($conn);
+    break;
+  case 'topsessions_resource':
+    getTopSessionsByResource($conn);
     break;
 
   oci_close($conn);

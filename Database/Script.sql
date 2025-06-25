@@ -655,3 +655,199 @@ EXCEPTION
 END fun_get_system_wait_summary;
 /
 SHOW ERROR;
+
+
+                        /*
+                        Performance Dashboard SECTION
+                        */
+
+-- A. Key Performance Ratios
+CREATE OR REPLACE FUNCTION fun_get_performance_ratios
+RETURN SYS_REFCURSOR IS
+    cr SYS_REFCURSOR;
+    physical_reads NUMBER;
+    db_block_gets NUMBER;
+    consistent_gets NUMBER;
+    buffer_cache_hit_ratio NUMBER;
+
+    lib_cache_gets NUMBER;
+    lib_cache_gethits NUMBER;
+    library_cache_hit_ratio NUMBER;
+
+    row_cache_gets NUMBER;
+    row_cache_getmisses NUMBER;
+    dict_cache_hit_ratio NUMBER;
+
+    latch_gets NUMBER;
+    latch_misses NUMBER;
+    latch_hit_ratio NUMBER;
+
+BEGIN
+    -- Buffer Cache Hit Ratio
+    SELECT SUM(CASE name WHEN 'physical reads' THEN value ELSE 0 END),
+           SUM(CASE name WHEN 'db block gets' THEN value ELSE 0 END),
+           SUM(CASE name WHEN 'consistent gets' THEN value ELSE 0 END)
+    INTO physical_reads, db_block_gets, consistent_gets
+    FROM V$SYSSTAT
+    WHERE name IN ('physical reads', 'db block gets', 'consistent gets');
+
+    IF (db_block_gets + consistent_gets) = 0 THEN
+        buffer_cache_hit_ratio := 100; -- Avoid division by zero, assume 100% if no gets
+    ELSE
+        buffer_cache_hit_ratio := ROUND((1 - (physical_reads / (db_block_gets + consistent_gets))) * 100, 2);
+    END IF;
+    IF buffer_cache_hit_ratio < 0 THEN buffer_cache_hit_ratio := 0; END IF; -- Ensure it's not negative if physical_reads > logical_reads (unlikely but safe)
+
+
+    -- Library Cache Hit Ratio (using GETHITS/GETS)
+    SELECT SUM(GETS), SUM(GETHITS)
+    INTO lib_cache_gets, lib_cache_gethits
+    FROM V$LIBRARYCACHE;
+
+    IF lib_cache_gets = 0 THEN
+        library_cache_hit_ratio := 100;
+    ELSE
+        library_cache_hit_ratio := ROUND((lib_cache_gethits / lib_cache_gets) * 100, 2);
+    END IF;
+
+    -- Dictionary Cache Hit Ratio
+    SELECT SUM(GETS), SUM(GETMISSES)
+    INTO row_cache_gets, row_cache_getmisses
+    FROM V$ROWCACHE;
+
+    IF row_cache_gets = 0 THEN
+        dict_cache_hit_ratio := 100;
+    ELSE
+        dict_cache_hit_ratio := ROUND((1 - (row_cache_getmisses / row_cache_gets)) * 100, 2);
+    END IF;
+
+    -- Latch Hit Ratio (Simplified: overall)
+    SELECT SUM(GETS), SUM(MISSES)
+    INTO latch_gets, latch_misses
+    FROM V$LATCH;
+
+    IF latch_gets = 0 THEN
+      latch_hit_ratio := 100;
+    ELSE
+      latch_hit_ratio := ROUND((1 - (latch_misses / latch_gets)) * 100, 2);
+    END IF;
+
+
+    OPEN cr FOR
+        SELECT
+            'Buffer Cache Hit Ratio' AS RATIO_NAME, buffer_cache_hit_ratio AS RATIO_VALUE FROM DUAL
+        UNION ALL
+        SELECT
+            'Library Cache Hit Ratio' AS RATIO_NAME, library_cache_hit_ratio AS RATIO_VALUE FROM DUAL
+        UNION ALL
+        SELECT
+            'Dictionary Cache Hit Ratio' AS RATIO_NAME, dict_cache_hit_ratio AS RATIO_VALUE FROM DUAL
+        UNION ALL
+        SELECT
+            'Latch Hit Ratio' AS RATIO_NAME, latch_hit_ratio AS RATIO_VALUE FROM DUAL;
+
+    RETURN cr;
+EXCEPTION
+    WHEN OTHERS THEN
+        -- DBMS_OUTPUT.PUT_LINE('Error in fun_get_performance_ratios: ' || SQLERRM);
+        -- In case of error, return NULL or an empty cursor with error status if possible
+        -- For simplicity here, just returning NULL if an error occurs during calculation.
+        -- A more robust way would be to open cursor with error details.
+        OPEN cr FOR SELECT 'Error' AS RATIO_NAME, -1 AS RATIO_VALUE, SQLERRM AS ERROR_MSG FROM DUAL;
+        RETURN cr;
+END fun_get_performance_ratios;
+/
+SHOW ERROR;
+
+-- B. Call Rates
+CREATE OR REPLACE FUNCTION fun_get_call_rates
+RETURN SYS_REFCURSOR IS
+    cr SYS_REFCURSOR;
+    user_calls NUMBER;
+    user_commits NUMBER;
+    user_rollbacks NUMBER;
+BEGIN
+    SELECT SUM(CASE name WHEN 'user calls' THEN value ELSE 0 END),
+           SUM(CASE name WHEN 'user commits' THEN value ELSE 0 END),
+           SUM(CASE name WHEN 'user rollbacks' THEN value ELSE 0 END)
+    INTO user_calls, user_commits, user_rollbacks
+    FROM V$SYSSTAT
+    WHERE name IN ('user calls', 'user commits', 'user rollbacks');
+
+    OPEN cr FOR
+        SELECT
+            user_calls AS USER_CALLS_CUMULATIVE,
+            user_commits AS USER_COMMITS_CUMULATIVE,
+            user_rollbacks AS USER_ROLLBACKS_CUMULATIVE,
+            SYSTIMESTAMP AS CURRENT_DB_TIME -- Current time for delta calculation
+        FROM DUAL;
+
+    RETURN cr;
+EXCEPTION
+    WHEN OTHERS THEN
+        OPEN cr FOR
+            SELECT -1 AS USER_CALLS_CUMULATIVE,
+                   -1 AS USER_COMMITS_CUMULATIVE,
+                   -1 AS USER_ROLLBACKS_CUMULATIVE,
+                   SYSTIMESTAMP AS CURRENT_DB_TIME,
+                   SQLERRM AS ERROR_MSG
+            FROM DUAL;
+        RETURN cr;
+END fun_get_call_rates;
+/
+SHOW ERROR;
+
+-- C. Top Sessions by Resource
+CREATE OR REPLACE FUNCTION fun_get_top_sessions_by_resource (
+    p_resource_metric_name IN VARCHAR2, -- e.g., 'CPU used by this session', 'session logical reads', 'physical reads direct'
+    p_top_n IN NUMBER DEFAULT 5
+)
+RETURN SYS_REFCURSOR IS
+    cr SYS_REFCURSOR;
+    v_sql CLOB;
+    v_stat_name_predicate VARCHAR2(200);
+BEGIN
+    -- It's crucial to validate p_resource_metric_name to prevent SQL injection if it were used directly in dynamic SQL for column names.
+    -- However, here it's used in a WHERE clause against V$STATNAME.NAME, which is safer.
+    -- Still, ensure it's a plausible statistic name.
+    -- For this version, we assume the provided name is valid and exists in V$STATNAME.
+    -- A more robust version might check against a predefined list of allowed metrics.
+
+    v_sql := 'SELECT * FROM (
+                SELECT
+                    s.SID,
+                    s.SERIAL#,
+                    s.USERNAME,
+                    s.PROGRAM,
+                    s.MACHINE,
+                    ss.VALUE AS METRIC_VALUE,
+                    sn.NAME AS METRIC_NAME
+                FROM
+                    V$SESSION s
+                JOIN
+                    V$SESSTAT ss ON s.SID = ss.SID
+                JOIN
+                    V$STATNAME sn ON ss.STATISTIC# = sn.STATISTIC#
+                WHERE
+                    s.USERNAME IS NOT NULL AND
+                    s.STATUS = ''ACTIVE'' AND
+                    sn.NAME = :resource_metric_name
+                ORDER BY
+                    ss.VALUE DESC
+              )
+              WHERE ROWNUM <= :top_n';
+
+    OPEN cr FOR v_sql USING p_resource_metric_name, p_top_n;
+    RETURN cr;
+EXCEPTION
+    WHEN OTHERS THEN
+        OPEN cr FOR
+            SELECT -1 AS SID,
+                   'Error' AS USERNAME,
+                   -1 AS METRIC_VALUE,
+                   SQLERRM AS ERROR_MSG
+            FROM DUAL;
+        RETURN cr;
+END fun_get_top_sessions_by_resource;
+/
+SHOW ERROR;
