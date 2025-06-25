@@ -1,5 +1,15 @@
 <?php
-// server/connections_handler.php
+/**
+ * Handles CRUD operations for Oracle database connection profiles.
+ * Ensures that users are authenticated and can only manage their own profiles.
+ * Passwords for Oracle DB connections are encrypted before storage.
+ *
+ * Actions via GET/POST 'action' parameter:
+ * - 'list': (GET) Lists all connection profiles for the logged-in user.
+ * - 'add': (POST) Adds a new connection profile for the logged-in user.
+ * - 'delete': (POST) Deletes a specified connection profile for the logged-in user.
+ * - 'set_active_connection': (POST) Sets a connection profile as active in the user's session.
+ */
 session_start();
 
 require_once 'app_db_connection.php';
@@ -7,22 +17,27 @@ require_once 'encryption_helper.php'; // For encrypt_data and decrypt_data
 
 header('Content-Type: application/json');
 
-// Ensure user is logged in
+// Ensure user is logged in for all actions handled by this script
 if (!isset($_SESSION['app_user_id'])) {
     echo json_encode(['status' => 'error', 'message' => 'Authentication required. Please login.']);
     exit();
 }
-$app_user_id = $_SESSION['app_user_id'];
+$app_user_id = (int)$_SESSION['app_user_id']; // Cast to int for safety
 
 $action = $_GET['action'] ?? $_POST['action'] ?? '';
 $pdo = getAppDbConnection();
 
 if (!$pdo) {
-    echo json_encode(['status' => 'error', 'message' => 'Database service unavailable.']);
+    error_log("connections_handler.php: Failed to get application database connection.");
+    echo json_encode(['status' => 'error', 'message' => 'Application database service unavailable. Please try again later.']);
     exit();
 }
 
 switch ($action) {
+    /**
+     * Adds a new Oracle database connection profile.
+     * Expects POST data: profile_name, db_host, db_port, db_service_name, db_user, db_password.
+     */
     case 'add':
         if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $profile_name = trim($_POST['profile_name'] ?? '');
@@ -80,6 +95,10 @@ switch ($action) {
         }
         break;
 
+    /**
+     * Lists all Oracle database connection profiles for the logged-in user.
+     * Does not return encrypted passwords.
+     */
     case 'list':
         try {
             $stmt = $pdo->prepare(
@@ -97,6 +116,10 @@ switch ($action) {
         }
         break;
 
+    /**
+     * Deletes a specified Oracle database connection profile for the logged-in user.
+     * Expects POST data: conn_id.
+     */
     case 'delete':
         if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $conn_id = $_POST['conn_id'] ?? null;
@@ -137,6 +160,11 @@ switch ($action) {
     //     // Similar logic to add, but with UPDATE statement and conn_id
     //     break;
 
+    /**
+     * Sets the active Oracle database connection profile in the user's session.
+     * Expects POST data: conn_id.
+     * Verifies that the connection ID belongs to the logged-in user.
+     */
     case 'set_active_connection':
         if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $conn_id = $_POST['conn_id'] ?? null;

@@ -1,9 +1,22 @@
 <?php
-// server/register_handler.php
-session_start(); // Not strictly needed for registration but good practice if you set session messages
+/**
+ * Handles application user registration requests.
+ * Validates input, checks for existing username/email, hashes passwords,
+ * and inserts new users into the 'users' table in the application's SQLite database.
+ * Redirects user to registration or login page with messages.
+ */
+session_start();
 
-require_once 'app_db_connection.php';
+require_once 'app_db_connection.php'; // Provides getAppDbConnection()
 
+/**
+ * Redirects the user to a specified URL with a message and type in query parameters.
+ * Exits script execution after sending the header.
+ *
+ * @param string $url The URL to redirect to.
+ * @param string $message The message to display to the user.
+ * @param string $type The type of message ('success' or 'error'), affects display.
+ */
 function redirect_with_message($url, $message, $type = 'error') {
     $message = urlencode($message);
     header("Location: {$url}?message={$message}&type={$type}");
@@ -11,6 +24,7 @@ function redirect_with_message($url, $message, $type = 'error') {
 }
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
+    // Sanitize and retrieve form data
     $username = trim($_POST['username'] ?? '');
     $email = trim($_POST['email'] ?? '');
     $password = $_POST['password'] ?? '';

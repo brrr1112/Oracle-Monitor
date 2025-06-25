@@ -99,9 +99,19 @@ function getUsersSQL($conn)
 SGA Section
 */
 
+/**
+ * Fetches SGA usage data over time from the `job_SGA_Table`.
+ * This table is populated by a database job (`prc_ins_job_SGA`).
+ * Outputs a JSON array of arrays, where each inner array is [TIME, USED_MB, HWM_MB].
+ * HWM_MB is calculated based on TOTAL_MB * $HWM_percentage.
+ *
+ * @param resource $conn Active OCI8 connection resource.
+ * @param float $HWM_percentage High Water Mark percentage (e.g., 0.95 for 95%).
+ * @return void Outputs JSON directly.
+ */
 function getSGATable($conn, $HWM)
 {
-  $query = oci_parse($conn, 'select USED_MB, TIME, TOTAL_MB from sys.job_SGA_Table');
+  $query = oci_parse($conn, 'select USED_MB, TIME, TOTAL_MB from sys.job_SGA_Table'); // Consider adding ORDER BY TIME
   oci_execute($query);
 
   $rows = array();
@@ -154,6 +164,15 @@ function writeAlertCSV($alertArray)
   fclose($file);
 }
 
+/**
+ * Fetches SGA related alerts (e.g., high-consumption SQL statements).
+ * Calls the PL/SQL function `fun_get_sgaAlerts`.
+ * Writes alert data to a CSV file named after the Oracle username (e.g., 'SYS.csv') - Note: This behavior might be unexpected for a multi-tenant app user.
+ * Outputs a JSON array of alert details.
+ *
+ * @param resource $conn Active OCI8 connection resource.
+ * @return void Outputs JSON directly.
+ */
 function getSGAAlerts($conn)
 {
 
@@ -264,6 +283,17 @@ function getTSBarInfo($conn, $HWM)
   echo $var;
 }
 
+/**
+ * Fetches detailed information for all tablespaces.
+ * Calls the PL/SQL function `fun_get_TS_allInfo`.
+ * Calculates HWM size based on total size and $HWM_percentage.
+ * Outputs a JSON array of arrays, each inner array containing details for a tablespace
+ * (Name, Actual Used MB, Free MB, Total MB, Calculated HWM MB, Daily Growth MB, Remaining Time Days).
+ *
+ * @param resource $conn Active OCI8 connection resource.
+ * @param float $HWM_percentage High Water Mark percentage (e.g., 0.95) used for HWM calculation.
+ * @return void Outputs JSON directly.
+ */
 function getTSAllInfo($conn, $HWM_percentage){ // Renamed $HWM to $HWM_percentage for clarity
   $query = oci_parse($conn, 'begin :cursor := sys.fun_get_TS_allInfo; end;');
   $p_cursor = oci_new_cursor($conn);
@@ -489,6 +519,16 @@ function getSystemWaitSummary($conn) {
 Performance Dashboard PHP Functions
 */
 
+/**
+ * Fetches key performance ratios from the Oracle database.
+ * Calls the PL/SQL function `fun_get_performance_ratios`.
+ * Outputs a JSON array of objects, each with RATIO_NAME and RATIO_VALUE.
+ * Example: `[{"RATIO_NAME":"Buffer Cache Hit Ratio","RATIO_VALUE":99.85}, ...]`
+ * On PL/SQL error, may include an ERROR_MSG property in the objects.
+ *
+ * @param resource $conn Active OCI8 connection resource to the target Oracle database.
+ * @return void Outputs JSON directly.
+ */
 function getPerformanceRatios($conn) {
     $curs = oci_new_cursor($conn);
     $stid = oci_parse($conn, "begin :curs := fun_get_performance_ratios(); end;");
@@ -504,6 +544,17 @@ function getPerformanceRatios($conn) {
     echo json_encode($data);
 }
 
+/**
+ * Fetches cumulative call rates (user calls, commits, rollbacks) and current DB time.
+ * Calls the PL/SQL function `fun_get_call_rates`.
+ * Outputs a JSON object with USER_CALLS_CUMULATIVE, USER_COMMITS_CUMULATIVE,
+ * USER_ROLLBACKS_CUMULATIVE, and CURRENT_DB_TIME (as a string).
+ * The frontend uses this data to calculate per-second rates.
+ * On PL/SQL error, values might be -1 and an ERROR_MSG property included.
+ *
+ * @param resource $conn Active OCI8 connection resource to the target Oracle database.
+ * @return void Outputs JSON directly.
+ */
 function getCallRates($conn) {
     $curs = oci_new_cursor($conn);
     $stid = oci_parse($conn, "begin :curs := fun_get_call_rates(); end;");
@@ -525,6 +576,16 @@ function getCallRates($conn) {
     echo json_encode($data);
 }
 
+/**
+ * Fetches top N active sessions ranked by a specified resource metric.
+ * Calls the PL/SQL function `fun_get_top_sessions_by_resource`.
+ * Expects GET parameters 'resource_metric' (e.g., 'CPU used by this session') and 'top_n'.
+ * Outputs a JSON array of session objects, each including SID, USERNAME, PROGRAM, MACHINE, METRIC_VALUE, METRIC_NAME.
+ * On PL/SQL error, may return a single element array with ERROR_MSG.
+ *
+ * @param resource $conn Active OCI8 connection resource to the target Oracle database.
+ * @return void Outputs JSON directly.
+ */
 function getTopSessionsByResource($conn) {
     $resource_metric = isset($_GET['resource_metric']) ? $_GET['resource_metric'] : 'CPU used by this session';
     $top_n = isset($_GET['top_n']) ? intval($_GET['top_n']) : 5;

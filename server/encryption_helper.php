@@ -31,13 +31,17 @@ define('ENCRYPTION_CIPHER', 'aes-256-gcm');
 
 /**
  * Encrypts a plaintext string using AES-256-GCM.
+ * The ENCRYPTION_KEY constant must be defined and be 32 bytes long.
+ * The ENCRYPTION_CIPHER constant defines the cipher method (e.g., 'aes-256-gcm').
  *
- * @param string $plaintext The string to encrypt.
- * @return string|false Base64 encoded string of "iv.tag.ciphertext" or false on failure.
+ * @param string $plaintext The plaintext string to encrypt.
+ * @return string|false Returns a base64 encoded string formatted as "iv.tag.ciphertext" on success,
+ *                      or false on failure (e.g., key misconfiguration, openssl error).
+ *                      Errors are logged.
  */
 function encrypt_data(string $plaintext): string|false {
     if (!defined('ENCRYPTION_KEY') || strlen(ENCRYPTION_KEY) !== 32) {
-        error_log("Encryption failed: ENCRYPTION_KEY is not properly configured.");
+        error_log("Encryption failed: ENCRYPTION_KEY is not properly configured (must be defined and 32 bytes long).");
         return false;
     }
     try {
@@ -76,14 +80,19 @@ function encrypt_data(string $plaintext): string|false {
 }
 
 /**
- * Decrypts a base64 encoded string that was encrypted with encrypt_data().
+ * Decrypts a base64 encoded string that was encrypted with `encrypt_data()`.
+ * It expects the input format "iv.tag.ciphertext" (base64 encoded).
+ * The ENCRYPTION_KEY constant must be defined and be 32 bytes long.
+ * The ENCRYPTION_CIPHER constant defines the cipher method.
  *
- * @param string $base64_ciphertext The base64 encoded string ("iv.tag.ciphertext").
- * @return string|false The original plaintext string or false on failure.
+ * @param string $base64_ciphertext The base64 encoded string containing IV, tag, and ciphertext.
+ * @return string|false The original plaintext string on successful decryption and authentication,
+ *                      or false on failure (e.g., key misconfiguration, invalid format, decryption error, tag mismatch).
+ *                      Errors are logged.
  */
 function decrypt_data(string $base64_ciphertext): string|false {
     if (!defined('ENCRYPTION_KEY') || strlen(ENCRYPTION_KEY) !== 32) {
-        error_log("Decryption failed: ENCRYPTION_KEY is not properly configured.");
+        error_log("Decryption failed: ENCRYPTION_KEY is not properly configured (must be defined and 32 bytes long).");
         return false;
     }
     try {

@@ -1,8 +1,18 @@
 <?php
-// server/app_db_connection.php
+/**
+ * Provides a centralized way to get a PDO connection to the application's SQLite database.
+ * The database file is expected at app_data/monitoring_tool.sqlite relative to the project root.
+ */
 
+/**
+ * Establishes and returns a PDO connection object to the SQLite database.
+ * Configures PDO to throw exceptions on error and fetch associative arrays by default.
+ *
+ * @return PDO|null A PDO connection object on success, or null on failure.
+ *                  Errors are logged if connection fails.
+ */
 function getAppDbConnection() {
-    $db_file = __DIR__ . '/../app_data/monitoring_tool.sqlite';
+    $db_file = __DIR__ . '/../app_data/monitoring_tool.sqlite'; // Path to the SQLite database file
     $pdo = null;
 
     try {

@@ -1,9 +1,22 @@
 <?php
-// server/app_login_handler.php
+/**
+ * Handles application user login requests.
+ * Verifies credentials against the 'users' table in the application's SQLite database.
+ * Manages PHP session creation and regeneration upon successful login.
+ * Redirects user to menu or back to login page with messages.
+ */
 session_start();
 
-require_once 'app_db_connection.php';
+require_once 'app_db_connection.php'; // Provides getAppDbConnection()
 
+/**
+ * Redirects the user to a specified URL with a message and type in query parameters.
+ * Exits script execution after sending the header.
+ *
+ * @param string $url The URL to redirect to.
+ * @param string $message The message to display to the user.
+ * @param string $type The type of message ('success' or 'error'), affects display.
+ */
 function redirect_with_message($url, $message, $type = 'error') {
     $message = urlencode($message);
     header("Location: {$url}?message={$message}&type={$type}");

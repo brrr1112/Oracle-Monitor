@@ -15,11 +15,11 @@ require_once __DIR__ . '/encryption_helper.php';
  *
  * @param int $app_user_id The ID of the logged-in application user.
  * @param int $connection_profile_id The ID of the database_connections profile to use.
- * @return resource|false The OCI connection resource on success, or false on failure.
- *                        Sets a session error message on failure.
+ * @return resource|false The OCI connection resource on success, or false on failure. Sets a session error message (`$_SESSION['oracle_connection_error']`) on failure.
+ *                        Logs errors for admin review.
  */
 function establish_oracle_connection(int $app_user_id, int $connection_profile_id) {
-    $app_pdo = getAppDbConnection();
+    $app_pdo = getAppDbConnection(); // External function to get PDO connection to app's SQLite DB
     if (!$app_pdo) {
         $_SESSION['oracle_connection_error'] = "Failed to connect to application database.";
         error_log("establish_oracle_connection: Failed to get App DB connection for user {$app_user_id}, profile {$connection_profile_id}");
