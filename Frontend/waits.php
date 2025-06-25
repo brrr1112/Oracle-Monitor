@@ -79,7 +79,14 @@
                 </tbody>
             </table>
         </div>
-        <div id="waitsChart"></div>
+        <div class="row">
+            <div class="col-md-6">
+                <div id="timeWaitedChart" style="width: 100%; height: 400px; margin-top: 20px;"></div>
+            </div>
+            <div class="col-md-6">
+                <div id="totalWaitsChart" style="width: 100%; height: 400px; margin-top: 20px;"></div>
+            </div>
+        </div>
     </div>
 </body>
 </html>

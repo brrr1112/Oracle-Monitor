@@ -21,8 +21,9 @@ function loadSystemWaits() {
     }
 
     $('#waitsTableBody').html('<tr><td colspan="6" style="text-align:center;">Loading system waits...</td></tr>');
-    // Clear previous chart
-    $('#waitsChart').empty().html('<p style="text-align:center; padding-top:50px;">Loading chart data...</p>');
+    // Clear previous charts
+    $('#timeWaitedChart').empty().html('<p style="text-align:center; padding-top:50px;">Loading Time Waited chart data...</p>');
+    $('#totalWaitsChart').empty().html('<p style="text-align:center; padding-top:50px;">Loading Total Waits chart data...</p>');
 
 
     $.ajax({
@@ -31,7 +32,8 @@ function loadSystemWaits() {
         dataType: 'json',
         success: function (data) {
             populateWaitsTable(data);
-            drawWaitsChart(data);
+            drawTimeWaitedChart(data); // Renamed and updated
+            drawTotalWaitsChart(data); // New chart
         },
         error: function (xhr, status, error) {
             console.error("Error loading system waits: ", status, error, xhr.responseText);
@@ -45,7 +47,8 @@ function loadSystemWaits() {
                 }
             }
             $('#waitsTableBody').html(errorMsg);
-            $('#waitsChart').html('<p style="text-align:center; color:red;">Could not load chart data.</p>');
+            $('#timeWaitedChart').html('<p style="text-align:center; color:red;">Could not load Time Waited chart data.</p>');
+            $('#totalWaitsChart').html('<p style="text-align:center; color:red;">Could not load Total Waits chart data.</p>');
         }
     });
 }
@@ -71,9 +74,10 @@ function populateWaitsTable(waits) {
     }
 }
 
-function drawWaitsChart(waitsData) {
+function drawTimeWaitedChart(waitsData) {
+    var chartContainerId = 'timeWaitedChart';
     if (!waitsData || waitsData.length === 0) {
-        $('#waitsChart').html('<p style="text-align:center;">No data available to display chart.</p>');
+        $('#' + chartContainerId).html('<p style="text-align:center;">No data available for Time Waited chart.</p>');
         return;
     }
 
@@ -87,24 +91,61 @@ function drawWaitsChart(waitsData) {
 
     var options = {
         title: 'Top System Wait Events by Time Waited',
-        chartArea: {width: '60%', height: '70%'},
+        chartArea: {width: '60%', height: '70%'}, // Adjusted for potentially smaller space if side-by-side
         hAxis: {
           title: 'Time Waited (Seconds)',
-          minValue: 0
+          minValue: 0,
+          textStyle: { fontSize: 10 }
         },
         vAxis: {
           title: 'Wait Event',
           textStyle: { fontSize: 10 }
         },
         legend: { position: 'none' },
-        bars: 'horizontal', // Horizontal bar chart
-        colors: ['#3366cc'] // Example color
+        bars: 'horizontal',
+        colors: ['#3366cc']
     };
 
-    var chartContainer = document.getElementById('waitsChart');
-    // Clear previous chart content explicitly before drawing a new one
+    var chartContainer = document.getElementById(chartContainerId);
     $(chartContainer).empty();
+    var chart = new google.visualization.BarChart(chartContainer);
+    chart.draw(data, options);
+}
 
+function drawTotalWaitsChart(waitsData) {
+    var chartContainerId = 'totalWaitsChart';
+    if (!waitsData || waitsData.length === 0) {
+        $('#' + chartContainerId).html('<p style="text-align:center;">No data available for Total Waits chart.</p>');
+        return;
+    }
+
+    var data = new google.visualization.DataTable();
+    data.addColumn('string', 'Wait Event');
+    data.addColumn('number', 'Number of Waits');
+
+    waitsData.forEach(function(wait) {
+        data.addRow([wait.EVENT, parseInt(wait.TOTAL_WAITS)]);
+    });
+
+    var options = {
+        title: 'Top System Wait Events by Number of Waits',
+        chartArea: {width: '60%', height: '70%'}, // Adjusted for potentially smaller space
+        hAxis: {
+          title: 'Number of Waits',
+          minValue: 0,
+          textStyle: { fontSize: 10 }
+        },
+        vAxis: {
+          title: 'Wait Event',
+          textStyle: { fontSize: 10 }
+        },
+        legend: { position: 'none' },
+        bars: 'horizontal',
+        colors: ['#dc3912'] // Different color for distinction
+    };
+
+    var chartContainer = document.getElementById(chartContainerId);
+    $(chartContainer).empty();
     var chart = new google.visualization.BarChart(chartContainer);
     chart.draw(data, options);
 }
