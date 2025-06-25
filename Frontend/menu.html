@@ -11,12 +11,16 @@
       <div class="header">
         <div class="box1">
           <p class="titu">Menu</p>
-          <img class="logo" src="img/logo.png" />
+          <div style="display: flex; align-items: center;">
+            <!-- We can display username here later if available from session in menu.php -->
+            <a href="../server/logout_handler.php" style="margin-left: 20px; color: white; text-decoration: none; background-color: #c0392b; padding: 8px 15px; border-radius: 4px;">Logout</a>
+            <img class="logo" src="img/logo.png" style="margin-left: 20px;" />
+          </div>
         </div>
       </div>
     </div>
 
-    <div class="row">
+    <div class="row" style="padding-top: 20px;">
       <div class="column">
         <div class="box">
           <h2 class="titulo">User Monitor</h2>
