@@ -126,6 +126,78 @@ This application is a PHP-based web tool that connects to Oracle databases. Here
 6.  **Logout:**
     *   When finished, click the "Logout" link (usually in the header on the Menu page or other pages) to securely end your application session.
 
+## Running Tests
+
+This project includes PHPUnit tests for backend functionality.
+
+**Prerequisites for Testing:**
+
+1.  **Composer:** Ensure Composer is installed globally or available in your PHP environment.
+2.  **PHPUnit:** Install project development dependencies, including PHPUnit, by running:
+    ```bash
+    composer install
+    ```
+    This command should be run in the root directory of the project (where `composer.json` is located).
+
+**Test Configuration:**
+
+1.  **Encryption Key for Tests:**
+    *   The tests, especially those involving encryption or database interaction that might trigger encryption (like `ConnectionsHandlerTest`), require an encryption key.
+    *   A placeholder environment variable `TEST_ENCRYPTION_KEY` is defined in `phpunit.xml.dist`.
+    *   **It is highly recommended to create a `phpunit.xml` file (a copy of `phpunit.xml.dist`) and set a specific, non-production 32-byte key for `TEST_ENCRYPTION_KEY` there.** `phpunit.xml` is typically gitignored.
+        ```xml
+        <!-- phpunit.xml -->
+        <php>
+            <env name="TEST_ENCRYPTION_KEY" value="YourDedicated32ByteTestKey12345"/>
+        </php>
+        ```
+    *   Alternatively, you can set this as an actual environment variable in your testing system.
+    *   The `encryption_helper.php` has a development fallback key, but tests are more reliable if a specific test key is configured.
+
+2.  **Test Database (for Integration Tests):**
+    *   Integration tests (like `RegistrationHandlerTest`, `LoginHandlerTest`, `ConnectionsHandlerTest`) are designed to run against an **in-memory SQLite database** to avoid affecting your development or production application database.
+    *   For these tests to correctly use the in-memory database, the `server/app_db_connection.php` script needs to be aware of the testing environment. The tests attempt to use a global variable (`$GLOBALS['TEST_PDO_OVERRIDE']`) to inject the test PDO instance. This requires a modification to `server/app_db_connection.php` similar to this for the tests to fully work as intended with the database:
+        ```php
+        // server/app_db_connection.php (modified for testability)
+        function getAppDbConnection() {
+            if (isset($GLOBALS['TEST_PDO_OVERRIDE']) && $GLOBALS['TEST_PDO_OVERRIDE'] instanceof \PDO) {
+                return $GLOBALS['TEST_PDO_OVERRIDE'];
+            }
+            // ... original SQLite connection logic ...
+        }
+        ```
+    *   Without this modification, the integration tests might attempt to use the actual `app_data/monitoring_tool.sqlite` file, which could lead to test failures or data contamination if not handled carefully. The current tests are written assuming they can control the PDO instance.
+
+**Executing Tests:**
+
+*   **From the project root directory, run:**
+    ```bash
+    composer test
+    ```
+    (This uses the script defined in `composer.json`)
+*   **Or directly using the PHPUnit executable (if in your PATH or from `vendor/bin`):**
+    ```bash
+    ./vendor/bin/phpunit
+    ```
+    Or:
+    ```bash
+    phpunit
+    ```
+
+**Interpreting Test Results:**
+
+*   PHPUnit will output the results of the tests, showing successes, failures, errors, and skipped tests.
+*   **Skipped Tests:** Some integration tests (for `RegistrationHandlerTest` and `LoginHandlerTest`) are currently marked as skipped (`$this->markTestSkipped(...)`). This is because fully testing procedural scripts that involve `header()` redirects and `exit()` calls directly within PHPUnit requires more advanced setup (like PHPUnit's `@runInSeparateProcess` annotation per test, or significant refactoring of those handler scripts into more testable units). The comments in those test files provide more details. The `ConnectionsHandlerTest` is more complete as it tests JSON API-like behavior.
+
+**Code Coverage (Optional):**
+
+*   If you have Xdebug or PCOV installed and configured for PHP, you can generate a code coverage report. The `phpunit.xml.dist` is configured to include files from the `server/` directory.
+*   To generate an HTML coverage report, you might run:
+    ```bash
+    ./vendor/bin/phpunit --coverage-html coverage-report
+    ```
+    The report will be generated in the `coverage-report/` directory.
+
 ## Screenshots
 
 *(Existing screenshots might be from an older version. New screenshots reflecting the multi-user interface and new features would be beneficial here.)*
