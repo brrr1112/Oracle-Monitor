@@ -255,5 +255,4 @@ function getAppDbConnection() {
 // This change to app_db_connection.php would allow the tests to inject the in-memory PDO.
 // The tests also need a way to assert redirects and messages, often by mocking header() and exit()
 // or by using PHPUnit features for testing HTTP output.
-?>
-*/
+// ?>
