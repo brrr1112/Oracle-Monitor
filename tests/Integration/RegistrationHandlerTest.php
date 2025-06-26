@@ -256,3 +256,4 @@ function getAppDbConnection() {
 // The tests also need a way to assert redirects and messages, often by mocking header() and exit()
 // or by using PHPUnit features for testing HTTP output.
 ?>
+*/
