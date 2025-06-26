@@ -198,6 +198,241 @@ This project includes PHPUnit tests for backend functionality.
     ```
     The report will be generated in the `coverage-report/` directory.
 
+## Deploying to an Ubuntu Server for Public Access
+
+This guide provides steps to deploy the Oracle Monitor application on an Ubuntu server and make it publicly accessible.
+
+**Prerequisites:**
+
+*   An Ubuntu server (e.g., an AWS EC2 instance, VPS, or dedicated server).
+*   Root or sudo access to the server.
+*   A domain name (e.g., `your-oracle-monitor.com`) pointed to your server's public IP address.
+*   Familiarity with basic Linux commands and server administration.
+
+**1. Server Setup & PHP Installation:**
+
+*   **Update System:**
+    ```bash
+    sudo apt update && sudo apt upgrade -y
+    ```
+*   **Install Web Server (Apache or Nginx):**
+    *   **Apache:**
+        ```bash
+        sudo apt install apache2 -y
+        sudo systemctl enable apache2
+        sudo systemctl start apache2
+        # Configure Apache virtual host (see step 4)
+        ```
+    *   **Nginx:**
+        ```bash
+        sudo apt install nginx -y
+        sudo systemctl enable nginx
+        sudo systemctl start nginx
+        # Configure Nginx server block (see step 4)
+        ```
+*   **Install PHP & Required Extensions:**
+    The specific PHP version might depend on Ubuntu's repositories or if you add a PPA for newer PHP versions (e.g., `ondrej/php`). Assuming PHP 8.1:
+    ```bash
+    sudo apt install php8.1 php8.1-fpm php8.1-cli php8.1-common php8.1-sqlite3 php8.1-oci8 php8.1-openssl php8.1-xml php8.1-mbstring php8.1-ctype php8.1-json php8.1-bcmath php8.1-tokenizer -y
+    ```
+    *   If using Apache with `mod_php`, install `libapache2-mod-php8.1`. If using Nginx or Apache with PHP-FPM, `php8.1-fpm` is key.
+    *   Enable PHP extensions if necessary (e.g., `sudo phpenmod pdo_sqlite oci8 openssl`).
+
+**2. Install Oracle Instant Client:**
+
+*   Go to the [Oracle Instant Client Downloads page](https://www.oracle.com/database/technologies/instant-client/linux-x86-64-downloads.html).
+*   Download the "Basic" or "Basic Light" package and the "SDK" package for your server's architecture (usually x86-64). You might also need the "SQL*Plus" package for testing.
+    *   Example for 19c (versions may vary, get the latest compatible ones):
+        *   `instantclient-basic-linux.x64-19.x.x.x.x.zip`
+        *   `instantclient-sdk-linux.x64-19.x.x.x.x.zip`
+*   **Install on Server:**
+    ```bash
+    # Example directory
+    sudo mkdir -p /opt/oracle
+    cd /opt/oracle
+    # Assuming you've uploaded the zips here
+    sudo unzip instantclient-basic-linux.x64-*.zip
+    sudo unzip instantclient-sdk-linux.x64-*.zip
+    # This creates a directory like /opt/oracle/instantclient_19_XX
+    export ORACLE_CLIENT_DIR=/opt/oracle/instantclient_19_XX # Adjust version
+    ```
+*   **Configure Dynamic Linker:**
+    ```bash
+    echo $ORACLE_CLIENT_DIR | sudo tee /etc/ld.so.conf.d/oracle-instantclient.conf
+    sudo ldconfig
+    ```
+*   **Set Environment Variables (for web server & CLI PHP):**
+    *   These need to be available to the PHP process run by your web server. This can be tricky.
+    *   For Apache with `mod_php`, you might set them in `/etc/apache2/envvars`.
+    *   For PHP-FPM, you might set them in the FPM pool configuration file (e.g., `/etc/php/8.1/fpm/pool.d/www.conf` by adding `env[LD_LIBRARY_PATH] = ...`).
+    *   Example variables:
+        ```bash
+        # Add to the relevant env file (e.g., /etc/apache2/envvars or PHP-FPM pool config)
+        export LD_LIBRARY_PATH=$ORACLE_CLIENT_DIR:$LD_LIBRARY_PATH
+        export ORACLE_HOME=$ORACLE_CLIENT_DIR # OCI8 might sometimes look for ORACLE_HOME
+        # For some setups TNS_ADMIN might be needed if you use tnsnames.ora
+        # export TNS_ADMIN=/path/to/your/tnsnames/directory
+        ```
+    *   **Restart Web Server and PHP-FPM** after setting environment variables:
+        ```bash
+        sudo systemctl restart apache2 # or nginx
+        sudo systemctl restart php8.1-fpm # if using PHP-FPM
+        ```
+    *   Verify OCI8 is loaded in PHP: create a `phpinfo.php` file in your web root with `<?php phpinfo(); ?>` and check the OCI8 section.
+
+**3. Deploy Application Code:**
+
+*   Follow steps 1, 3, 4, and 5 from the "Setup and Installation" section above (Clone repository, Initialize App DB, Configure Encryption Key, Prepare Target Oracle DBs).
+*   Place the application code in the directory designated by your web server configuration (e.g., `/var/www/your-oracle-monitor.com`).
+*   **Permissions:** Ensure the web server user (e.g., `www-data` for Apache/Nginx on Debian/Ubuntu) has:
+    *   Read access to the application files (especially `Frontend/` and `server/`).
+    *   Write access to the `app_data/` directory to create and manage the `monitoring_tool.sqlite` database.
+    ```bash
+    sudo chown -R www-data:www-data /var/www/your-oracle-monitor.com
+    sudo find /var/www/your-oracle-monitor.com -type d -exec chmod 755 {} \;
+    sudo find /var/www/your-oracle-monitor.com -type f -exec chmod 644 {} \;
+    sudo chmod -R 775 /var/www/your-oracle-monitor.com/app_data # Ensure web server can write here
+    ```
+
+**4. Configure Web Server for Public Access:**
+
+*   **Apache Virtual Host:**
+    Create a new Apache configuration file (e.g., `/etc/apache2/sites-available/your-oracle-monitor.com.conf`):
+    ```apache
+    <VirtualHost *:80>
+        ServerAdmin webmaster@your-oracle-monitor.com
+        ServerName your-oracle-monitor.com
+        # Optional: ServerAlias www.your-oracle-monitor.com
+
+        DocumentRoot /var/www/your-oracle-monitor.com/Frontend
+        DirectoryIndex index.php index.html
+
+        <Directory /var/www/your-oracle-monitor.com/Frontend>
+            Options Indexes FollowSymLinks
+            AllowOverride All # Important for .htaccess if used (e.g., in app_data)
+            Require all granted
+        </Directory>
+
+        ErrorLog ${APACHE_LOG_DIR}/your-oracle-monitor-error.log
+        CustomLog ${APACHE_LOG_DIR}/your-oracle-monitor-access.log combined
+
+        # PHP-FPM Configuration (if not using mod_php)
+        # <FilesMatch \.php$>
+        #     SetHandler "proxy:unix:/run/php/php8.1-fpm.sock|fcgi://localhost/"
+        # </FilesMatch>
+    </VirtualHost>
+    ```
+    Enable the site and rewrite module:
+    ```bash
+    sudo a2ensite your-oracle-monitor.com.conf
+    sudo a2enmod rewrite
+    sudo systemctl restart apache2
+    ```
+
+*   **Nginx Server Block:**
+    Create a new Nginx configuration file (e.g., `/etc/nginx/sites-available/your-oracle-monitor.com`):
+    ```nginx
+    server {
+        listen 80;
+        listen [::]:80;
+
+        server_name your-oracle-monitor.com; # Add www.your-oracle-monitor.com if needed
+        root /var/www/your-oracle-monitor.com/Frontend;
+        index index.php index.html;
+
+        location / {
+            try_files $uri $uri/ /index.php?$query_string;
+        }
+
+        location ~ \.php$ {
+            include snippets/fastcgi-php.conf;
+            fastcgi_pass unix:/run/php/php8.1-fpm.sock; # Check your PHP-FPM socket path
+            # fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+            # include fastcgi_params;
+        }
+
+        location ~ /\.ht {
+            deny all; # Deny access to .htaccess files if any exist (though Nginx doesn't use them)
+        }
+
+        # Protect app_data directory (assuming it's inside project root, adjust path if it's outside web root)
+        location /../app_data { # This relative path might need adjustment based on root
+             deny all;
+             return 404;
+        }
+        # Better: ensure app_data is outside the DocumentRoot. If it must be inside,
+        # and your DocumentRoot is /var/www/your-oracle-monitor.com/Frontend
+        # then a location block for /app_data/ would be relative to that root.
+        # If app_data is at /var/www/your-oracle-monitor.com/app_data:
+        # location /../app_data { deny all; } (from Frontend/../app_data)
+        # If you moved app_data outside /var/www, no specific Nginx rule is needed here for it.
+
+        access_log /var/log/nginx/your-oracle-monitor-access.log;
+        error_log /var/log/nginx/your-oracle-monitor-error.log;
+    }
+    ```
+    Enable the site by creating a symlink:
+    ```bash
+    sudo ln -s /etc/nginx/sites-available/your-oracle-monitor.com /etc/nginx/sites-enabled/
+    sudo nginx -t # Test configuration
+    sudo systemctl restart nginx
+    ```
+
+**5. Install Composer and Dependencies:**
+    If not already done during local setup/testing:
+    ```bash
+    cd /var/www/your-oracle-monitor.com
+    # Install Composer if you haven't: https://getcomposer.org/download/
+    # php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');"
+    # php composer-setup.php --install-dir=/usr/local/bin --filename=composer
+    # php -r "unlink('composer-setup.php');"
+    composer install --no-dev --optimize-autoloader # For production, no dev dependencies
+    ```
+
+**6. Configure Firewall:**
+    Allow HTTP (port 80) and HTTPS (port 443) traffic.
+    ```bash
+    sudo ufw allow 'Apache Full' # or 'Nginx Full'
+    # Or more specifically:
+    # sudo ufw allow 80/tcp
+    # sudo ufw allow 443/tcp
+    sudo ufw enable # If not already enabled
+    ```
+
+**7. Secure with HTTPS (Let's Encrypt - Recommended):**
+    *   Install Certbot:
+        ```bash
+        sudo apt install certbot python3-certbot-apache # For Apache
+        # OR
+        sudo apt install certbot python3-certbot-nginx # For Nginx
+        ```
+    *   Obtain and install SSL certificate:
+        ```bash
+        sudo certbot --apache # For Apache
+        # OR
+        sudo certbot --nginx # For Nginx
+        ```
+        Follow the prompts. Certbot will automatically update your web server configuration for HTTPS and set up auto-renewal.
+
+**8. Final Checks:**
+    *   Ensure your domain's DNS records point to your server's public IP.
+    *   Test accessing the application via `http://your-oracle-monitor.com` and then `https://your-oracle-monitor.com`.
+    *   Try registering a user, adding a DB connection profile, and monitoring an Oracle database that you have prepared with `Database/Script.sql` and for which the server has network access.
+
+**Important Security Considerations for Public Access:**
+
+*   **HTTPS is a must.**
+*   **Strong Encryption Key:** The `ENCRYPTION_KEY` in `server/config.php` must be very strong and kept secret. Consider loading it from an environment variable set outside the codebase or from a secrets management service if on a cloud platform like AWS.
+*   **Application Database Security:** The `app_data/` directory and `monitoring_tool.sqlite` file must *not* be publicly accessible via the web. The web server configurations above include attempts to block access, but verify this. Placing `app_data` outside the web server's document root is the most secure.
+*   **PHP Configuration:** Harden your PHP configuration (e.g., disable `expose_php`, set appropriate `memory_limit`, `upload_max_filesize`, `post_max_size`, configure `error_reporting` for production).
+*   **Regular Updates:** Keep your server, PHP, web server, and all packages updated.
+*   **Firewall:** Only open necessary ports.
+*   **Input Validation & Output Escaping:** The application should diligently validate all user inputs and escape all outputs to prevent XSS and other injection attacks. The current implementation has basic escaping in places but would need a thorough review for a public-facing service.
+*   **Rate Limiting & Brute-Force Protection:** Consider implementing measures against login brute-force attacks.
+*   **Oracle User Privileges:** Ensure the Oracle users configured by your application users have the minimum necessary privileges on their target databases. Avoid using SYSDBA or highly privileged accounts if possible.
+
+This deployment guide provides a comprehensive starting point. Specific configurations might vary based on your exact Ubuntu version, PHP version, and chosen web server.
+
 ## Screenshots
 
 *(Existing screenshots might be from an older version. New screenshots reflecting the multi-user interface and new features would be beneficial here.)*
