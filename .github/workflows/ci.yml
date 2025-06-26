@@ -1,0 +1,106 @@
+# This workflow provides a CI pipeline for the PHP application.
+# It includes steps for linting, static analysis, dependency vulnerability checks, and running PHPUnit tests.
+name: PHP CI Pipeline
+
+on:
+  push:
+    branches: [ "main", "feature/**", "docs/**", "fix/**" ] # Added fix branches
+  pull_request:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+env:
+  PHP_VERSION: '8.1' # Specify a PHP version
+  COMPOSER_PREFER_DIST: 'true' # Recommended for CI
+
+permissions:
+  contents: read
+
+jobs:
+  ci_checks:
+    name: PHP CI Checks (Lint, Static Analysis, Tests)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ env.PHP_VERSION }}
+          extensions: pdo_sqlite, oci8, openssl, bcmath, ctype, iconv, json, mbstring, tokenizer, xml # Common extensions
+          tools: composer
+        env:
+          # Workaround for OCI8 setup on GH Actions if no Oracle client is readily available in the runner image.
+          # This might skip oci8 if client libs aren't found, allowing other steps to proceed.
+          # For tests needing OCI8, a proper Oracle Client setup in the runner would be required.
+          SKIP_OCI8_INSTALL_ERROR: true # Custom flag for setup-php action (check its docs)
+
+      - name: Validate composer.json and composer.lock
+        run: composer validate --strict --no-check-version # Allow different patch versions of PHP
+
+      - name: Get Composer Cache Directory
+        id: composer-cache
+        run: echo "COMPOSER_CACHE_DIR=$(composer config cache-files-dir)" >> $GITHUB_ENV
+
+      - name: Cache Composer packages
+        uses: actions/cache@v3
+        with:
+          path: ${{ env.COMPOSER_CACHE_DIR }}
+          key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-composer-
+
+      - name: Install Composer dependencies
+        run: composer install --no-progress --no-suggest
+
+      - name: Check for Composer package vulnerabilities
+        run: composer audit
+
+      # Linting (PHP-CS-Fixer)
+      # Assumes configuration file .php-cs-fixer.dist.php exists in the repo root.
+      # Add it with: vendor/bin/php-cs-fixer init
+      # Then customize it. For CI, use --dry-run and --diff to check, not fix.
+      - name: Run PHP CS Fixer (Linting)
+        run: |
+          if [ -f ".php-cs-fixer.dist.php" ] || [ -f ".php-cs-fixer.php" ]; then
+            vendor/bin/php-cs-fixer fix --dry-run --diff --config=.php-cs-fixer.dist.php --allow-risky=yes || (echo "PHP CS Fixer found issues. Run 'vendor/bin/php-cs-fixer fix --config=.php-cs-fixer.dist.php --allow-risky=yes' locally to fix them." && exit 1)
+          else
+            echo "PHP CS Fixer config not found, skipping linting."
+          fi
+
+      # Static Analysis (PHPStan)
+      # Assumes configuration file phpstan.neon.dist or phpstan.neon exists.
+      # Create with: vendor/bin/phpstan init
+      # Then customize, especially `paths` and `level`.
+      - name: Run PHPStan (Static Analysis)
+        run: |
+          if [ -f "phpstan.neon.dist" ] || [ -f "phpstan.neon" ]; then
+            vendor/bin/phpstan analyse --memory-limit=2G -c phpstan.neon.dist || (echo "PHPStan found issues." && exit 1)
+          elif [ -f "phpstan.neon" ]; then
+            vendor/bin/phpstan analyse --memory-limit=2G || (echo "PHPStan found issues." && exit 1)
+          else
+            echo "PHPStan config not found, skipping static analysis."
+          fi
+
+      # Setup for application DB (SQLite) - ensure app_data is writable
+      - name: Create app_data directory for SQLite (if needed by tests)
+        run: mkdir -p app_data && sudo chown -R $USER:$USER app_data
+
+      # Setup for Encryption Key for Tests
+      - name: Set Test Encryption Key Environment Variable
+        run: echo "TEST_ENCRYPTION_KEY=TestWorkflow_32Byte_EncryptKey01" >> $GITHUB_ENV # Use a dedicated test key
+
+      # Run PHPUnit Tests
+      - name: Run PHPUnit tests
+        run: composer test # This should call vendor/bin/phpunit
+
+      # Optional: Matrix testing for different PHP versions
+      # To use this, uncomment the strategy section below and adjust php-version in Setup PHP step.
+      # strategy:
+      #   fail-fast: false
+      #   matrix:
+      #     php-versions: ['8.0', '8.1', '8.2']
+      # Then in Setup PHP: php-version: ${{ matrix.php-versions }}
+      # And adjust job name: name: PHP ${{ matrix.php-versions }} CI Checks
