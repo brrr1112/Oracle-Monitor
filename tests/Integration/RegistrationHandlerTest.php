@@ -147,6 +147,7 @@ class RegistrationHandlerTest extends TestCase
         //     // ... original code ...
         // }
         // ?>
+    }
 
         // Assuming the above modification is made (or a similar test strategy for PDO injection):
         $this->includeRegisterHandler(); // This will redirect and exit.
